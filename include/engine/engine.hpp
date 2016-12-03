@@ -17,6 +17,7 @@
 #include "engine/plugins/tile.hpp"
 #include "engine/plugins/trip.hpp"
 #include "engine/plugins/viaroute.hpp"
+#include "engine/plugins/prediction.hpp"
 #include "engine/status.hpp"
 #include "util/json_container.hpp"
 
@@ -41,6 +42,7 @@ class Engine final
     Engine &operator=(const Engine &) = delete;
 
     Status Route(const api::RouteParameters &parameters, util::json::Object &result) const;
+    Status Prediction(const api::RouteParameters &parameters, util::json::Object &result) const;    
     Status Table(const api::TableParameters &parameters, util::json::Object &result) const;
     Status Nearest(const api::NearestParameters &parameters, util::json::Object &result) const;
     Status Trip(const api::TripParameters &parameters, util::json::Object &result) const;
@@ -52,6 +54,7 @@ class Engine final
     std::unique_ptr<DataWatchdog> watchdog;
 
     const plugins::ViaRoutePlugin route_plugin;
+    const plugins::PredictionPlugin prediction_plugin;
     const plugins::TablePlugin table_plugin;
     const plugins::NearestPlugin nearest_plugin;
     const plugins::TripPlugin trip_plugin;

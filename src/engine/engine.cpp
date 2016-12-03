@@ -56,6 +56,7 @@ Engine::Engine(const EngineConfig &config)
     : lock(config.use_shared_memory ? std::make_unique<storage::SharedBarriers>()
                                     : std::unique_ptr<storage::SharedBarriers>()),
       route_plugin(config.max_locations_viaroute),       //
+      prediction_plugin(config.max_locations_viaroute),  //      
       table_plugin(config.max_locations_distance_table), //
       nearest_plugin(config.max_results_nearest),        //
       trip_plugin(config.max_locations_trip),            //
@@ -88,6 +89,11 @@ Engine::Engine(const EngineConfig &config)
 Status Engine::Route(const api::RouteParameters &params, util::json::Object &result) const
 {
     return RunQuery(watchdog, immutable_data_facade, params, route_plugin, result);
+}
+
+Status Engine::Prediction(const api::RouteParameters &params, util::json::Object &result) const
+{
+    return RunQuery(watchdog, immutable_data_facade, params, prediction_plugin, result);
 }
 
 Status Engine::Table(const api::TableParameters &params, util::json::Object &result) const

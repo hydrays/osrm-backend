@@ -86,6 +86,15 @@ class OSRM final
     Status Route(const RouteParameters &parameters, json::Object &result) const;
 
     /**
+     * Prediction queries.
+     *
+     * \param parameters route query specific parameters
+     * \return Status indicating success for the query or failure
+     * \see Status, RouteParameters and json::Object
+     */
+    Status Prediction(const RouteParameters &parameters, json::Object &result) const;
+    
+    /**
      * Distance tables for coordinates.
      *
      * \param parameters table query specific parameters
