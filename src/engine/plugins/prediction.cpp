@@ -22,8 +22,9 @@ namespace plugins
 {
 
 PredictionPlugin::PredictionPlugin(int max_locations_viaroute)
-    : shortest_path(heaps), alternative_path(heaps), direct_shortest_path(heaps),
+    : traffic_prediction(heaps),
       max_locations_viaroute(max_locations_viaroute)
+
 {
 }
 
@@ -84,24 +85,10 @@ Status PredictionPlugin::HandleRequest(const std::shared_ptr<datafacade::BaseDat
     };
     util::for_each_pair(snapped_phantoms, build_phantom_pairs);
 
-    if (1 == raw_route.segment_end_coordinates.size())
-    {
-        if (route_parameters.alternatives && facade->GetCoreSize() == 0)
-        {
-            alternative_path(*facade, raw_route.segment_end_coordinates.front(), raw_route);
-        }
-        else
-        {
-            direct_shortest_path(*facade, raw_route.segment_end_coordinates, raw_route);
-        }
-    }
-    else
-    {
-        shortest_path(*facade,
-                      raw_route.segment_end_coordinates,
-                      route_parameters.continue_straight,
-                      raw_route);
-    }
+    traffic_prediction(*facade,
+		       raw_route.segment_end_coordinates,
+		       route_parameters.continue_straight,
+		       raw_route);
 
     // we can only know this after the fact, different SCC ids still
     // allow for connection in one direction.
