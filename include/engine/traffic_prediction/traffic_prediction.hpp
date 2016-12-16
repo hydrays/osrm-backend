@@ -319,7 +319,6 @@ class TrafficPrediction final
         // this implements a dynamic program that finds the shortest route through
         // a list of vias
 
-	std::cout << "hello world!\n";
         for (const auto &phantom_node_pair : phantom_nodes_vector)
         {
             int new_total_weight_to_forward = INVALID_EDGE_WEIGHT;
@@ -524,6 +523,20 @@ class TrafficPrediction final
                        total_weight_to_forward,
                        raw_route_data);
         }
+
+	std::cout << "hello world!\n";
+        for (std::vector<std::vector<PathData>>::iterator iter=raw_route_data.unpacked_path_segments.begin();
+	     iter!=raw_route_data.unpacked_path_segments.end(); iter++)
+	{
+	    for (std::vector<PathData>::iterator node_iter=iter.begin(); node_iter!=iter.end();
+		 node_iter++)
+	    {
+		//iter!=raw_route_data.unpacked_path_segments.end(); iter++)
+		std::cout << "hello world!\n";
+		std::cout << node_iter.turn_via_node << " " << node_iter.name_id << '\n'
+	    }
+	    //std::cout << iter.turn_via_node << '\n';
+	}
     }
 };
 }

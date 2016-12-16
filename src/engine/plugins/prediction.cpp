@@ -24,7 +24,6 @@ namespace plugins
 PredictionPlugin::PredictionPlugin(int max_locations_viaroute)
     : traffic_prediction(heaps),
       max_locations_viaroute(max_locations_viaroute)
-
 {
 }
 
