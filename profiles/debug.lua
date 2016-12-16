@@ -43,8 +43,10 @@ mode = {
 
 -- input tags, normally extracted from OSM data
 local way = {
-  highway = 'motorway',
+  highway = 'primary',
   name = 'Main Street',
+  --access = 'no'
+  ["access:forward"] = 'no'
   --width = '3',
   --maxspeed = '30',
   --['maxspeed:advisory'] = '25',
@@ -56,13 +58,32 @@ local way = {
   --route = 'ferry',
   --duration = '00:01:00',
   --hov = 'designated',
-  --access = 'no'
+  --hov:lanes:forward"] = 'designated',
+
   --destination = 'Berlin',
-  ["destination:ref"] = 'Nuremberg',
+  --["destination:ref"] = 'Nuremberg',
   --["destination:ref:forward"] = 'Hamburg;Dresden',
 }
 -- tag function normally provided via C++
 function way:get_value_by_key(k)
+  if not self['_debug'] then
+    self['_debug'] = {
+      _counts = {}
+    }
+  end
+
+  if self['_debug']['_total'] then
+    self['_debug']['_total'] = self['_debug']['_total'] + 1
+  else
+    self['_debug']['_total'] = 1
+  end
+
+  if self['_debug']['_counts'][k] then
+    self['_debug']['_counts'][k] = self['_debug']['_counts'][k] + 1
+  else
+    self['_debug']['_counts'][k] = 1
+  end
+  
   return self[k]
 end
 
@@ -83,6 +104,27 @@ function canonicalizeStringList(str)
   return str
 end
  
+-- helpers for sorting associative array
+function get_keys_sorted_by_value(tbl, sortFunction)
+  local keys = {}
+  for key in pairs(tbl) do
+    table.insert(keys, key)
+  end
+
+  table.sort(keys, function(a, b)
+    return sortFunction(tbl[a], tbl[b])
+  end)
+
+  return keys
+end
+
+-- helper for printing sorted array
+function print_sorted(sorted,associative)
+  for _, key in ipairs(sorted) do
+    print(associative[key], key)
+  end
+end
+
 -- start state of result table, normally set form C++
 local result = {
   road_classification = {},
@@ -100,3 +142,9 @@ way_function(way,result)
 pprint(way)
 print("=>")
 pprint(result)
+print("\n")
+print("Tag fetches:")
+sorted_counts = get_keys_sorted_by_value(way._debug._counts, function(a, b) return a > b end)
+print_sorted(sorted_counts, way._debug._counts)
+
+print(way._debug._total, 'total')

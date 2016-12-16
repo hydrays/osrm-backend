@@ -1,3 +1,9 @@
+# 5.5.1
+  - Changes from 5.5.0
+    - Bugfixes
+      - Fix #3418 and ensure we only return bearings in the range 0-359 in API responses
+      - Fixed a bug that could lead to emitting false instructions for staying on a roundabout
+
 # 5.5.0
   - Changes from 5.4.0
     - API:
@@ -19,6 +25,7 @@
       - Improved turn angle calculation, detecting offsets due to lanes / minor variations due to inaccuracies
       - Corrected the bearings returned for intermediate steps - requires reprocessing
       - Improved turn locations for collapsed turns
+      - Sliproad classification refinements: the situations we detect as Sliproads now resemble more closely the reality
     - Trip Plugin
       - changed internal behaviour to prefer the smallest lexicographic result over the largest one
     - Bugfixes
@@ -27,6 +34,8 @@
       - fixed a bug that could result in inconsistent behaviour when collapsing instructions
       - fixed a bug that could result in crashes when leaving a ferry directly onto a motorway ramp
       - fixed a bug in the tile plugin that resulted in discovering invalid edges for connections
+      - improved error messages when missing files during traffic updates (#3114)
+      - For single coordinate geometries the GeoJSON `Point` encoding was broken. We now always emit `LineString`s even in the one-coordinate-case (backwards compatible) (#3425)
     - Debug Tiles
       - Added support for turn penalties
     - Internals

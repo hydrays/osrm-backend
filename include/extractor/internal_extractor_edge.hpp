@@ -8,6 +8,7 @@
 #include <boost/assert.hpp>
 
 #include "extractor/guidance/road_classification.hpp"
+#include "extractor/guidance/turn_lane_types.hpp"
 #include "osrm/coordinate.hpp"
 #include <utility>
 
@@ -47,7 +48,6 @@ struct InternalExtractorEdge
                  false, // backward
                  false, // roundabout
                  false, // circular
-                 false, // access restricted
                  true,  // can be startpoint
                  TRAVEL_MODE_INACCESSIBLE,
                  false,
@@ -64,7 +64,6 @@ struct InternalExtractorEdge
                                    bool backward,
                                    bool roundabout,
                                    bool circular,
-                                   bool access_restricted,
                                    bool startpoint,
                                    TravelMode travel_mode,
                                    bool is_split,
@@ -78,7 +77,6 @@ struct InternalExtractorEdge
                  backward,
                  roundabout,
                  circular,
-                 access_restricted,
                  startpoint,
                  travel_mode,
                  is_split,
@@ -106,7 +104,6 @@ struct InternalExtractorEdge
                                      false, // backward
                                      false, // roundabout
                                      false, // circular
-                                     false, // access restricted
                                      true,  // can be startpoint
                                      TRAVEL_MODE_INACCESSIBLE,
                                      false,
@@ -123,7 +120,6 @@ struct InternalExtractorEdge
                                      false, // backward
                                      false, // roundabout
                                      false, // circular
-                                     false, // access restricted
                                      true,  // can be startpoint
                                      TRAVEL_MODE_INACCESSIBLE,
                                      false,

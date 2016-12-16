@@ -7,16 +7,19 @@
 #include "extractor/guidance/turn_instruction.hpp"
 #include "extractor/guidance/turn_lane_types.hpp"
 #include "extractor/profile_properties.hpp"
+#include "storage/shared_datatype.hpp"
 #include "util/guidance/bearing_class.hpp"
 #include "util/guidance/entry_class.hpp"
 #include "util/guidance/turn_lanes.hpp"
 
 #include "engine/geospatial_query.hpp"
+#include "util/exception.hpp"
+#include "util/exception_utils.hpp"
 #include "util/guidance/turn_bearing.hpp"
+#include "util/log.hpp"
 #include "util/packed_vector.hpp"
 #include "util/range_table.hpp"
 #include "util/rectangle.hpp"
-#include "util/simple_logger.hpp"
 #include "util/static_graph.hpp"
 #include "util/static_rtree.hpp"
 #include "util/typedefs.hpp"
@@ -116,7 +119,7 @@ class ContiguousInternalMemoryDataFacadeBase : public BaseDataFacade
     {
         m_check_sum =
             *data_layout.GetBlockPtr<unsigned>(memory_block, storage::DataLayout::HSGR_CHECKSUM);
-        util::SimpleLogger().Write() << "set checksum: " << m_check_sum;
+        util::Log() << "set checksum: " << m_check_sum;
     }
 
     void InitializeProfilePropertiesPointer(storage::DataLayout &data_layout, char *memory_block)
@@ -144,9 +147,9 @@ class ContiguousInternalMemoryDataFacadeBase : public BaseDataFacade
         file_index_path = boost::filesystem::path(file_index_ptr);
         if (!boost::filesystem::exists(file_index_path))
         {
-            util::SimpleLogger().Write(logDEBUG) << "Leaf file name " << file_index_path.string();
+            util::Log(logDEBUG) << "Leaf file name " << file_index_path.string();
             throw util::exception("Could not load " + file_index_path.string() +
-                                  "Is any data loaded into shared memory?");
+                                  "Is any data loaded into shared memory?" + SOURCE_REF);
         }
 
         auto tree_ptr =

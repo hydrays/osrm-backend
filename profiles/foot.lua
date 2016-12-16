@@ -6,10 +6,7 @@ local find_access_tag = require("lib/access").find_access_tag
 barrier_whitelist = { [""] = true, ["cycle_barrier"] = true, ["bollard"] = true, ["entrance"] = true, ["cattle_grid"] = true, ["border_control"] = true, ["toll_booth"] = true, ["sally_port"] = true, ["gate"] = true, ["no"] = true, ["block"] = true}
 access_tag_whitelist = { ["yes"] = true, ["foot"] = true, ["permissive"] = true, ["designated"] = true  }
 access_tag_blacklist = { ["no"] = true, ["private"] = true, ["agricultural"] = true, ["forestry"] = true, ["delivery"] = true }
-access_tag_restricted = { ["destination"] = true, ["delivery"] = true }
 access_tags_hierarchy = { "foot", "access" }
-service_tag_restricted = { ["parking_aisle"] = true }
-ignore_in_grid = { ["ferry"] = true }
 restrictions = { "foot" }
 
 walking_speed = 5
@@ -167,13 +164,12 @@ function way_function (way, result)
     -- speed
   if route_speeds[route] then
     -- ferries (doesn't cover routes tagged using relations)
-    result.ignore_in_grid = true
-  if duration and durationIsValid(duration) then
-    result.duration = math.max( 1, parseDuration(duration) )
-  else
-    result.forward_speed = route_speeds[route]
-    result.backward_speed = route_speeds[route]
-  end
+      if duration and durationIsValid(duration) then
+        result.duration = math.max( 1, parseDuration(duration) )
+      else
+        result.forward_speed = route_speeds[route]
+        result.backward_speed = route_speeds[route]
+      end
     result.forward_mode = mode.ferry
     result.backward_mode = mode.ferry
   elseif railway and platform_speeds[railway] then

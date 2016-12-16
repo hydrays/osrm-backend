@@ -1,11 +1,8 @@
 #ifndef SCRIPTING_ENVIRONMENT_LUA_HPP
 #define SCRIPTING_ENVIRONMENT_LUA_HPP
 
-#include "extractor/scripting_environment.hpp"
-
 #include "extractor/raster_source.hpp"
-
-#include "util/lua_util.hpp"
+#include "extractor/scripting_environment.hpp"
 
 #include <tbb/enumerable_thread_specific.h>
 
@@ -13,7 +10,7 @@
 #include <mutex>
 #include <string>
 
-struct lua_State;
+#include <sol2/sol.hpp>
 
 namespace osrm
 {
@@ -22,12 +19,12 @@ namespace extractor
 
 struct LuaScriptingContext final
 {
-    void processNode(const osmium::Node &, ExtractionNode &result);
-    void processWay(const osmium::Way &, ExtractionWay &result);
+    void ProcessNode(const osmium::Node &, ExtractionNode &result);
+    void ProcessWay(const osmium::Way &, ExtractionWay &result);
 
     ProfileProperties properties;
     SourceContainer sources;
-    util::LuaState state;
+    sol::state state;
 
     bool has_turn_penalty_function;
     bool has_node_function;
@@ -42,15 +39,15 @@ struct LuaScriptingContext final
  * Each thread has its own lua state which is implemented with thread specific
  * storage from TBB.
  */
-class LuaScriptingEnvironment final : public ScriptingEnvironment
+class Sol2ScriptingEnvironment final : public ScriptingEnvironment
 {
   public:
-    explicit LuaScriptingEnvironment(const std::string &file_name);
-    ~LuaScriptingEnvironment() override = default;
+    explicit Sol2ScriptingEnvironment(const std::string &file_name);
+    ~Sol2ScriptingEnvironment() override = default;
 
     const ProfileProperties &GetProfileProperties() override;
 
-    LuaScriptingContext &GetLuaContext();
+    LuaScriptingContext &GetSol2Context();
 
     std::vector<std::string> GetNameSuffixList() override;
     std::vector<std::string> GetRestrictions() override;

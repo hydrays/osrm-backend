@@ -8,11 +8,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
 
 #include "util/json_container.hpp"
-#include "util/simple_logger.hpp"
 #include "util/typedefs.hpp"
 
 namespace osrm

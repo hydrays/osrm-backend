@@ -1,5 +1,5 @@
 #include "util/guidance/bearing_class.hpp"
-#include "util/guidance/toolkit.hpp"
+#include "util/bearing.hpp"
 
 #include <algorithm>
 #include <boost/assert.hpp>
@@ -56,7 +56,7 @@ DiscreteBearing BearingClass::getDiscreteBearing(const double bearing)
 {
     BOOST_ASSERT(0. <= bearing && bearing <= 360.);
     auto shifted_bearing = (bearing + 0.5 * discrete_step_size);
-    if (shifted_bearing > 360.)
+    if (shifted_bearing >= 360.)
         shifted_bearing -= 360;
     return static_cast<DiscreteBearing>(shifted_bearing / discrete_step_size);
 }

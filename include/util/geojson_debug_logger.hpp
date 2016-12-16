@@ -5,9 +5,10 @@
 #include <mutex>
 #include <string>
 
+#include "util/exception.hpp"
 #include "util/json_container.hpp"
 #include "util/json_renderer.hpp"
-#include "util/simple_logger.hpp"
+#include "util/log.hpp"
 
 namespace osrm
 {
@@ -63,11 +64,11 @@ class GeojsonLogger
         // make sure to syncronize logging output, our writing should be sequential
         std::lock_guard<std::mutex> guard(lock);
 
-        // if there is no logfile, we cannot write
+        // if there is no logfile, we cannot write (possible reason: the guard might be out of scope
+        // (e.g. if it is anonymous))
         if (!ofs.is_open() || (nullptr == policy))
         {
-            // this can only happend between two guards when concurrent writing occurs
-            return false;
+            throw util::exception("Trying to use the geojson printer without an open logger.");
         }
 
         // use our policy to convert the arguments into geojson, this can be done in parallel
@@ -92,7 +93,7 @@ class GeojsonLogger
         // out on log output. Such a sad life
         if (ofs.is_open())
         {
-            util::SimpleLogger().Write(logWARNING)
+            util::Log(logWARNING)
                 << "Overwriting " << logfile
                 << ". Is this desired behaviour? If this message occurs more than once rethink the "
                    "location of your Logger Guard.";

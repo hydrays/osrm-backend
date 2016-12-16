@@ -3,14 +3,16 @@
 #include "extractor/guidance/turn_discovery.hpp"
 #include "extractor/guidance/turn_lane_augmentation.hpp"
 #include "extractor/guidance/turn_lane_matcher.hpp"
-#include "util/simple_logger.hpp"
+#include "util/bearing.hpp"
+#include "util/log.hpp"
 #include "util/typedefs.hpp"
 
 #include <cstddef>
 #include <cstdint>
 
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/numeric/conversion/cast.hpp>
+
+using osrm::util::angularDeviation;
 
 namespace osrm
 {
@@ -36,7 +38,7 @@ TurnLaneHandler::TurnLaneHandler(const util::NodeBasedDynamicGraph &node_based_g
                                  std::vector<TurnLaneType::Mask> &turn_lane_masks,
                                  LaneDescriptionMap &lane_description_map,
                                  const TurnAnalysis &turn_analysis,
-                                 LaneDataIdMap &id_map)
+                                 util::guidance::LaneDataIdMap &id_map)
     : node_based_graph(node_based_graph), turn_lane_offsets(turn_lane_offsets),
       turn_lane_masks(turn_lane_masks), lane_description_map(lane_description_map),
       turn_analysis(turn_analysis), id_map(id_map)
@@ -46,8 +48,8 @@ TurnLaneHandler::TurnLaneHandler(const util::NodeBasedDynamicGraph &node_based_g
 
 TurnLaneHandler::~TurnLaneHandler()
 {
-    std::cout << "Handled: " << count_handled << " of " << count_called
-              << " lanes: " << (double)(count_handled * 100) / (count_called) << " %." << std::endl;
+    util::Log() << "Handled: " << count_handled << " of " << count_called
+                << " lanes: " << (double)(count_handled * 100) / (count_called) << " %.";
 }
 
 /*
@@ -147,6 +149,17 @@ TurnLaneScenario TurnLaneHandler::deduceScenario(const NodeID at,
                                                  LaneDataVector &previous_lane_data,
                                                  LaneDescriptionID &previous_description_id)
 {
+    // as long as we don't want to emit lanes on roundabout, don't assign them
+    if (node_based_graph.GetEdgeData(via_edge).roundabout)
+        return TurnLaneScenario::NONE;
+
+    // really don't touch roundabouts (#2626)
+    if (intersection.end() !=
+        std::find_if(intersection.begin(), intersection.end(), [](const auto &road) {
+            return hasRoundaboutType(road.instruction);
+        }))
+        return TurnLaneScenario::NONE;
+
     // if only a uturn exists, there is nothing we can do
     if (intersection.size() == 1)
         return TurnLaneScenario::NONE;

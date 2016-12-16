@@ -6,7 +6,6 @@
 
 #include "util/guidance/bearing_class.hpp"
 #include "util/guidance/entry_class.hpp"
-#include "util/guidance/toolkit.hpp"
 #include "util/typedefs.hpp"
 
 #include <boost/assert.hpp>
@@ -193,8 +192,8 @@ util::json::Object makeStepManeuver(const guidance::StepManeuver &maneuver)
             detail::instructionModifierToString(maneuver.instruction.direction_modifier);
 
     step_maneuver.values["location"] = detail::coordinateToLonLat(maneuver.location);
-    step_maneuver.values["bearing_before"] = std::round(maneuver.bearing_before);
-    step_maneuver.values["bearing_after"] = std::round(maneuver.bearing_after);
+    step_maneuver.values["bearing_before"] = detail::roundAndClampBearing(maneuver.bearing_before);
+    step_maneuver.values["bearing_after"] = detail::roundAndClampBearing(maneuver.bearing_after);
     if (maneuver.exit != 0)
         step_maneuver.values["exit"] = maneuver.exit;
 
@@ -208,9 +207,10 @@ util::json::Object makeIntersection(const guidance::Intersection &intersection)
     util::json::Array entry;
 
     bearings.values.reserve(intersection.bearings.size());
-    std::copy(intersection.bearings.begin(),
-              intersection.bearings.end(),
-              std::back_inserter(bearings.values));
+    std::transform(intersection.bearings.begin(),
+                   intersection.bearings.end(),
+                   std::back_inserter(bearings.values),
+                   detail::roundAndClampBearing);
 
     entry.values.reserve(intersection.entry.size());
     std::transform(intersection.entry.begin(),

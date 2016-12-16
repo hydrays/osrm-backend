@@ -48,6 +48,8 @@ if(NOT WIN32 AND NOT Boost_USE_STATIC_LIBS)
   add_definitions(-DBOOST_TEST_DYN_LINK)
 endif()
 
+target_compile_definitions(extractor-tests PRIVATE COMPILE_DEFINITIONS OSRM_FIXTURES_DIR="${CMAKE_SOURCE_DIR}/unit_tests/fixtures")
+
 target_include_directories(engine-tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(library-tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(util-tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -55,7 +57,7 @@ target_include_directories(util-tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(engine-tests ${ENGINE_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 target_link_libraries(extractor-tests ${EXTRACTOR_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
-target_link_libraries(library-tests osrm ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+target_link_libraries(library-tests osrm ${ENGINE_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 target_link_libraries(server-tests osrm ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 target_link_libraries(util-tests ${UTIL_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 

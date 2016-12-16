@@ -1,17 +1,17 @@
 #include "extractor/guidance/coordinate_extractor.hpp"
 #include "extractor/guidance/constants.hpp"
-#include "extractor/guidance/toolkit.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <iomanip>
-#include <limits>
 #include <numeric>
 #include <tuple>
 #include <utility>
 
-#include <boost/range/algorithm/transform.hpp>
+#include "util/bearing.hpp"
+#include "util/coordinate_calculation.hpp"
+
+using osrm::util::angularDeviation;
 
 namespace osrm
 {
@@ -125,14 +125,14 @@ util::Coordinate CoordinateExtractor::ExtractRepresentativeCoordinate(
 
     // due to repeated coordinates / smaller offset errors we skip over the very first parts of the
     // coordinate set to add a small level of fault tolerance
-    const constexpr double distance_to_skip_over_due_to_coordinate_inaccuracies = 2;
+    const constexpr double skipping_inaccuracies_distance = 2;
 
     // fallback, mostly necessary for dead ends
     if (intersection_node == to_node)
     {
         const auto result = ExtractCoordinateAtLength(
-            distance_to_skip_over_due_to_coordinate_inaccuracies, coordinates);
-        BOOST_ASSERT(is_valid_result(coordinates.back()));
+            skipping_inaccuracies_distance, coordinates);
+        BOOST_ASSERT(is_valid_result(result));
         return result;
     }
 
@@ -146,8 +146,7 @@ util::Coordinate CoordinateExtractor::ExtractRepresentativeCoordinate(
     // roundabouts, check early to avoid other costly checks
     if (turn_edge_data.roundabout || turn_edge_data.circular)
     {
-        const auto result = ExtractCoordinateAtLength(
-            distance_to_skip_over_due_to_coordinate_inaccuracies, coordinates);
+        const auto result = ExtractCoordinateAtLength(skipping_inaccuracies_distance, coordinates);
         BOOST_ASSERT(is_valid_result(result));
         return result;
     }
@@ -234,8 +233,7 @@ util::Coordinate CoordinateExtractor::ExtractRepresentativeCoordinate(
         std::accumulate(segment_distances.begin(), segment_distances.end(), 0.);
 
     // if we are now left with two, well than we don't have to worry, or the segment is very small
-    if (coordinates.size() == 2 ||
-        total_distance <= distance_to_skip_over_due_to_coordinate_inaccuracies)
+    if (coordinates.size() == 2 || total_distance <= skipping_inaccuracies_distance)
     {
         BOOST_ASSERT(is_valid_result(coordinates.back()));
         return coordinates.back();
@@ -252,8 +250,8 @@ util::Coordinate CoordinateExtractor::ExtractRepresentativeCoordinate(
         // As a back-up, we have to check for this case
         if (coordinates.front() == coordinates.back())
         {
-            const auto result = ExtractCoordinateAtLength(
-                distance_to_skip_over_due_to_coordinate_inaccuracies, coordinates);
+            const auto result =
+                ExtractCoordinateAtLength(skipping_inaccuracies_distance, coordinates);
             BOOST_ASSERT(is_valid_result(result));
             return result;
         }
@@ -337,38 +335,9 @@ util::Coordinate CoordinateExtractor::ExtractRepresentativeCoordinate(
         return result;
     }
 
-    if (IsCurve(coordinates,
-                segment_distances,
-                total_distance,
-                considered_lanes * 0.5 * ASSUMED_LANE_WIDTH,
-                turn_edge_data))
-    {
-        if (total_distance <= distance_to_skip_over_due_to_coordinate_inaccuracies)
-            return coordinates.back();
-        /*
-         * In curves we now have to distinguish between larger curves and tiny curves modelling the
-         * actual turn in the beginnig.
-         *
-         * We distinguish between turns that simply model the initial way of getting onto the
-         * destination lanes and the ones that performa a larger turn.
-         */
-        const double offset =
-            std::min(0.5 * considered_lanes * ASSUMED_LANE_WIDTH, 0.2 * segment_distances.back());
-        coordinates = TrimCoordinatesToLength(std::move(coordinates), offset, segment_distances);
-        BOOST_ASSERT(coordinates.size() >= 2);
-        segment_distances.resize(coordinates.size());
-        segment_distances.back() = util::coordinate_calculation::haversineDistance(
-            *(coordinates.end() - 2), coordinates.back());
-        const auto vector_head = coordinates.back();
-        coordinates =
-            TrimCoordinatesToLength(std::move(coordinates), 0.5 * offset, segment_distances);
-        BOOST_ASSERT(coordinates.size() >= 2);
-        const auto result =
-            GetCorrectedCoordinate(turn_coordinate, coordinates.back(), vector_head);
-        BOOST_ASSERT(is_valid_result(result));
-        return result;
-    }
-
+    // We check offsets before curves to avoid detecting lane offsets due to large roads as curves
+    // (think major highway here). If the road is wide, it can have quite a few coordinates in the
+    // beginning.
     if (IsDirectOffset(coordinates,
                        straight_index,
                        straight_distance,
@@ -383,6 +352,37 @@ util::Coordinate CoordinateExtractor::ExtractRepresentativeCoordinate(
         const auto result = GetCorrectedCoordinate(
             turn_coordinate, coordinates[offset_index], coordinates[offset_index + 1]);
 
+        BOOST_ASSERT(is_valid_result(result));
+        return result;
+    }
+
+    if (IsCurve(coordinates,
+                segment_distances,
+                total_distance,
+                considered_lanes * 0.5 * ASSUMED_LANE_WIDTH,
+                turn_edge_data))
+    {
+        if (total_distance <= skipping_inaccuracies_distance)
+            return coordinates.back();
+        /*
+         * In curves we now have to distinguish between larger curves and tiny curves modelling the
+         * actual turn in the beginnig.
+         *
+         * We distinguish between turns that simply model the initial way of getting onto the
+         * destination lanes and the ones that performa a larger turn.
+         */
+        coordinates = TrimCoordinatesToLength(
+            std::move(coordinates), 2 * skipping_inaccuracies_distance, segment_distances);
+        BOOST_ASSERT(coordinates.size() >= 2);
+        segment_distances.resize(coordinates.size());
+        segment_distances.back() = util::coordinate_calculation::haversineDistance(
+            *(coordinates.end() - 2), coordinates.back());
+        const auto vector_head = coordinates.back();
+        coordinates = TrimCoordinatesToLength(
+            std::move(coordinates), skipping_inaccuracies_distance, segment_distances);
+        BOOST_ASSERT(coordinates.size() >= 2);
+        const auto result =
+            GetCorrectedCoordinate(turn_coordinate, coordinates.back(), vector_head);
         BOOST_ASSERT(is_valid_result(result));
         return result;
     }
@@ -447,18 +447,17 @@ CoordinateExtractor::ExtractCoordinateAtLength(const double distance,
 
     // find the beginning fo the segment (begin here and above for the length cache need to match
     // up!)
-    const auto coordinate_base =
-        std::find_if(coordinates.begin() + 1, coordinates.end(), find_coordinate_at_distance) - 1;
+    const auto coordinate_after =
+        std::find_if(coordinates.begin() + 1, coordinates.end(), find_coordinate_at_distance);
 
-    if (static_cast<std::size_t>(std::distance(coordinates.begin(), coordinate_base) + 1) >=
-        coordinates.size())
+    if (coordinate_after == coordinates.end())
         return coordinates.back();
 
     const auto interpolation_factor =
         ComputeInterpolationFactor(distance - accumulated_distance, 0, *length_cache_itr);
 
     return util::coordinate_calculation::interpolateLinear(
-        interpolation_factor, *coordinate_base, *(coordinate_base + 1));
+        interpolation_factor, *std::prev(coordinate_after), *coordinate_after);
 }
 
 util::Coordinate CoordinateExtractor::ExtractCoordinateAtLength(
@@ -475,26 +474,29 @@ util::Coordinate CoordinateExtractor::ExtractCoordinateAtLength(
             util::coordinate_calculation::haversineDistance(last_coordinate, coordinate);
         const auto result = (accumulated_distance + segment_distance) >= distance;
         if (!result)
+        {
             accumulated_distance += segment_distance;
+            last_coordinate = coordinate;
+        }
 
         return result;
     };
 
     // find the begin of the segment containing the coordinate
-    const auto coordinate_base =
-        std::find_if(coordinates.begin() + 1, coordinates.end(), coordinate_at_distance) - 1;
+    const auto coordinate_after =
+        std::find_if(coordinates.begin() + 1, coordinates.end(), coordinate_at_distance);
 
-    if (static_cast<std::size_t>(std::distance(coordinates.begin(), coordinate_base) + 1) >=
-        coordinates.size())
+    if (coordinate_after == coordinates.end())
         return coordinates.back();
 
-    const auto interpolation_factor = ComputeInterpolationFactor(
-        distance - accumulated_distance,
-        0,
-        util::coordinate_calculation::haversineDistance(*coordinate_base, *(coordinate_base + 1)));
+    const auto interpolation_factor =
+        ComputeInterpolationFactor(distance - accumulated_distance,
+                                   0,
+                                   util::coordinate_calculation::haversineDistance(
+                                       *std::prev(coordinate_after), *coordinate_after));
 
     return util::coordinate_calculation::interpolateLinear(
-        interpolation_factor, *coordinate_base, *(coordinate_base + 1));
+        interpolation_factor, *std::prev(coordinate_after), *coordinate_after);
 }
 
 util::Coordinate CoordinateExtractor::GetCoordinateCloseToTurn(const NodeID from_node,
@@ -598,6 +600,9 @@ CoordinateExtractor::GetCoordinatesAlongRoad(const NodeID intersection_node,
                            std::back_inserter(result),
                            compressedGeometryToCoordinate);
         }
+        // filter duplicated coordinates
+        auto end = std::unique(result.begin(), result.end());
+        result.erase(end, result.end());
         return result;
     }
 }
@@ -691,12 +696,12 @@ bool CoordinateExtractor::IsCurve(const std::vector<util::Coordinate> &coordinat
     std::tie(has_up_down_deviation, maximum_deviation_index, maximum_deviation) =
         [&coordinates, get_deviation]() -> std::tuple<bool, std::size_t, double> {
         const auto increasing = [&](const util::Coordinate lhs, const util::Coordinate rhs) {
-            return get_deviation(coordinates.front(), coordinates.back(), lhs) <=
+            return get_deviation(coordinates.front(), coordinates.back(), lhs) <
                    get_deviation(coordinates.front(), coordinates.back(), rhs);
         };
 
         const auto decreasing = [&](const util::Coordinate lhs, const util::Coordinate rhs) {
-            return get_deviation(coordinates.front(), coordinates.back(), lhs) >=
+            return get_deviation(coordinates.front(), coordinates.back(), lhs) >
                    get_deviation(coordinates.front(), coordinates.back(), rhs);
         };
 
@@ -707,16 +712,17 @@ bool CoordinateExtractor::IsCurve(const std::vector<util::Coordinate> &coordinat
             return std::make_tuple(
                 true, 1, get_deviation(coordinates.front(), coordinates.back(), coordinates[1]));
 
-        const auto maximum_itr =
+        const auto one_past_maximum_iter =
             std::is_sorted_until(coordinates.begin() + 1, coordinates.end(), increasing);
 
-        if (maximum_itr == coordinates.end())
+        if (one_past_maximum_iter == coordinates.end())
             return std::make_tuple(true, coordinates.size() - 1, 0.);
-        else if (std::is_sorted(maximum_itr, coordinates.end(), decreasing))
-            return std::make_tuple(
-                true,
-                std::distance(coordinates.begin(), maximum_itr),
-                get_deviation(coordinates.front(), coordinates.back(), *maximum_itr));
+        else if (std::is_sorted(one_past_maximum_iter, coordinates.end(), decreasing))
+            return std::make_tuple(true,
+                                   std::distance(coordinates.begin(), one_past_maximum_iter) - 1,
+                                   get_deviation(coordinates.front(),
+                                                 coordinates.back(),
+                                                 *(one_past_maximum_iter - 1)));
         else
             return std::make_tuple(false, 0, 0.);
     }();
@@ -729,7 +735,7 @@ bool CoordinateExtractor::IsCurve(const std::vector<util::Coordinate> &coordinat
     // if the maximum deviation is at a quarter of the total curve, we are probably looking at a
     // normal turn
     const auto distance_to_max_deviation = std::accumulate(
-        segment_distances.begin(), segment_distances.begin() + maximum_deviation_index, 0.);
+        segment_distances.begin(), segment_distances.begin() + maximum_deviation_index + 1, 0.);
 
     if ((distance_to_max_deviation <= 0.35 * segment_length ||
          maximum_deviation < std::max(0.3 * considered_lane_width, 0.5 * ASSUMED_LANE_WIDTH)) &&
@@ -928,11 +934,15 @@ CoordinateExtractor::TrimCoordinatesToLength(std::vector<util::Coordinate> coord
         const auto distance_between_last_coordinates =
             util::coordinate_calculation::haversineDistance(*(coordinates.end() - 2),
                                                             *(coordinates.end() - 1));
-        const auto interpolation_factor =
-            ComputeInterpolationFactor(length_cache.back(), 0, distance_between_last_coordinates);
 
-        coordinates.back() = util::coordinate_calculation::interpolateLinear(
-            interpolation_factor, *(coordinates.end() - 2), coordinates.back());
+        if (distance_between_last_coordinates > 0)
+        {
+            const auto interpolation_factor = ComputeInterpolationFactor(
+                length_cache.back(), 0, distance_between_last_coordinates);
+
+            coordinates.back() = util::coordinate_calculation::interpolateLinear(
+                interpolation_factor, *(coordinates.end() - 2), coordinates.back());
+        }
         return coordinates;
     }
     else
@@ -1138,7 +1148,8 @@ CoordinateExtractor::RegressionLine(const std::vector<util::Coordinate> &coordin
         return {coordinates.front(), coordinates.back()};
 
     // compute the regression vector based on the sum of least squares
-    const auto regression_line = leastSquareRegression(sampled_coordinates);
+    const auto regression_line =
+        util::coordinate_calculation::leastSquareRegression(sampled_coordinates);
     const auto coord_between_front =
         util::coordinate_calculation::projectPointOnSegment(
             regression_line.first, regression_line.second, coordinates.front())

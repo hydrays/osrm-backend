@@ -6,8 +6,8 @@
 #include "util/deallocating_vector.hpp"
 #include "util/dynamic_graph.hpp"
 #include "util/integer_range.hpp"
+#include "util/log.hpp"
 #include "util/percent.hpp"
-#include "util/simple_logger.hpp"
 #include "util/timing_util.hpp"
 #include "util/typedefs.hpp"
 #include "util/xor_fast_hash.hpp"
@@ -156,11 +156,10 @@ class GraphContractor
 #ifndef NDEBUG
             if (static_cast<unsigned int>(std::max(diter->weight, 1)) > 24 * 60 * 60 * 10)
             {
-                util::SimpleLogger().Write(logWARNING)
-                    << "Edge weight large -> "
-                    << static_cast<unsigned int>(std::max(diter->weight, 1)) << " : "
-                    << static_cast<unsigned int>(diter->source) << " -> "
-                    << static_cast<unsigned int>(diter->target);
+                util::Log(logWARNING) << "Edge weight large -> "
+                                      << static_cast<unsigned int>(std::max(diter->weight, 1))
+                                      << " : " << static_cast<unsigned int>(diter->source) << " -> "
+                                      << static_cast<unsigned int>(diter->target);
             }
 #endif
             edges.emplace_back(diter->source,
@@ -245,15 +244,14 @@ class GraphContractor
                 }
             }
         }
-        util::SimpleLogger().Write() << "merged " << edges.size() - edge << " edges out of "
-                                     << edges.size();
+        util::Log() << "merged " << edges.size() - edge << " edges out of " << edges.size();
         edges.resize(edge);
         contractor_graph = std::make_shared<ContractorGraph>(nodes, edges);
         edges.clear();
         edges.shrink_to_fit();
 
         BOOST_ASSERT(0 == edges.capacity());
-        util::SimpleLogger().Write() << "contractor finished initalization";
+        util::Log() << "contractor finished initalization";
     }
 
     void Run(double core_factor = 1.0)
@@ -270,7 +268,6 @@ class GraphContractor
         const constexpr size_t DeleteGrainSize = 1;
 
         const NodeID number_of_nodes = contractor_graph->GetNumberOfNodes();
-        util::Percent p(number_of_nodes);
 
         ThreadDataContainer thread_data_list(number_of_nodes);
 
@@ -281,9 +278,9 @@ class GraphContractor
 
         std::vector<RemainingNodeData> remaining_nodes(number_of_nodes);
         // initialize priorities in parallel
-        tbb::parallel_for(tbb::blocked_range<int>(0, number_of_nodes, InitGrainSize),
-                          [this, &remaining_nodes](const tbb::blocked_range<int> &range) {
-                              for (int x = range.begin(), end = range.end(); x != end; ++x)
+        tbb::parallel_for(tbb::blocked_range<NodeID>(0, number_of_nodes, InitGrainSize),
+                          [this, &remaining_nodes](const tbb::blocked_range<NodeID> &range) {
+                              for (auto x = range.begin(), end = range.end(); x != end; ++x)
                               {
                                   remaining_nodes[x].id = x;
                               }
@@ -292,9 +289,10 @@ class GraphContractor
         bool use_cached_node_priorities = !node_levels.empty();
         if (use_cached_node_priorities)
         {
-            std::cout << "using cached node priorities ..." << std::flush;
+            util::UnbufferedLog log;
+            log << "using cached node priorities ...";
             node_priorities.swap(node_levels);
-            std::cout << "ok" << std::endl;
+            log << "ok";
         }
         else
         {
@@ -302,22 +300,26 @@ class GraphContractor
             node_priorities.resize(number_of_nodes);
             node_levels.resize(number_of_nodes);
 
-            std::cout << "initializing elimination PQ ..." << std::flush;
-            tbb::parallel_for(tbb::blocked_range<int>(0, number_of_nodes, PQGrainSize),
-                              [this, &node_priorities, &node_depth, &thread_data_list](
-                                  const tbb::blocked_range<int> &range) {
-                                  ContractorThreadData *data = thread_data_list.GetThreadData();
-                                  for (int x = range.begin(), end = range.end(); x != end; ++x)
-                                  {
-                                      node_priorities[x] =
-                                          this->EvaluateNodePriority(data, node_depth[x], x);
-                                  }
-                              });
-            std::cout << "ok" << std::endl;
+            util::UnbufferedLog log;
+            log << "initializing elimination PQ ...";
+            tbb::parallel_for(
+                tbb::blocked_range<NodeID>(0, number_of_nodes, PQGrainSize),
+                [this, &node_priorities, &node_depth, &thread_data_list](
+                    const tbb::blocked_range<NodeID> &range) {
+                    ContractorThreadData *data = thread_data_list.GetThreadData();
+                    for (auto x = range.begin(), end = range.end(); x != end; ++x)
+                    {
+                        node_priorities[x] = this->EvaluateNodePriority(data, node_depth[x], x);
+                    }
+                });
+            log << "ok";
         }
         BOOST_ASSERT(node_priorities.size() == number_of_nodes);
 
-        std::cout << "preprocessing " << number_of_nodes << " nodes ..." << std::flush;
+        util::Log() << "preprocessing " << number_of_nodes << " nodes ...";
+
+        util::UnbufferedLog log;
+        util::Percent p(log, number_of_nodes);
 
         unsigned current_level = 0;
         bool flushed_contractor = false;
@@ -331,7 +333,7 @@ class GraphContractor
                     new_edge_set; // this one is not explicitely
                                   // cleared since it goes out of
                                   // scope anywa
-                std::cout << " [flush " << number_of_contracted_nodes << " nodes] " << std::flush;
+                log << " [flush " << number_of_contracted_nodes << " nodes] ";
 
                 // Delete old heap data to free memory that we need for the coming operations
                 thread_data_list.data.clear();
@@ -427,9 +429,9 @@ class GraphContractor
             }
 
             tbb::parallel_for(
-                tbb::blocked_range<std::size_t>(0, remaining_nodes.size(), IndependentGrainSize),
+                tbb::blocked_range<NodeID>(0, remaining_nodes.size(), IndependentGrainSize),
                 [this, &node_priorities, &remaining_nodes, &thread_data_list](
-                    const tbb::blocked_range<std::size_t> &range) {
+                    const tbb::blocked_range<NodeID> &range) {
                     ContractorThreadData *data = thread_data_list.GetThreadData();
                     // determine independent node set
                     for (auto i = range.begin(), end = range.end(); i != end; ++i)
@@ -453,13 +455,13 @@ class GraphContractor
             {
                 // write out contraction level
                 tbb::parallel_for(
-                    tbb::blocked_range<std::size_t>(
+                    tbb::blocked_range<NodeID>(
                         begin_independent_nodes_idx, end_independent_nodes_idx, ContractGrainSize),
                     [this, remaining_nodes, flushed_contractor, current_level](
-                        const tbb::blocked_range<std::size_t> &range) {
+                        const tbb::blocked_range<NodeID> &range) {
                         if (flushed_contractor)
                         {
-                            for (int position = range.begin(), end = range.end(); position != end;
+                            for (auto position = range.begin(), end = range.end(); position != end;
                                  ++position)
                             {
                                 const NodeID x = remaining_nodes[position].id;
@@ -468,7 +470,7 @@ class GraphContractor
                         }
                         else
                         {
-                            for (int position = range.begin(), end = range.end(); position != end;
+                            for (auto position = range.begin(), end = range.end(); position != end;
                                  ++position)
                             {
                                 const NodeID x = remaining_nodes[position].id;
@@ -480,12 +482,12 @@ class GraphContractor
 
             // contract independent nodes
             tbb::parallel_for(
-                tbb::blocked_range<std::size_t>(
+                tbb::blocked_range<NodeID>(
                     begin_independent_nodes_idx, end_independent_nodes_idx, ContractGrainSize),
                 [this, &remaining_nodes, &thread_data_list](
-                    const tbb::blocked_range<std::size_t> &range) {
+                    const tbb::blocked_range<NodeID> &range) {
                     ContractorThreadData *data = thread_data_list.GetThreadData();
-                    for (int position = range.begin(), end = range.end(); position != end;
+                    for (auto position = range.begin(), end = range.end(); position != end;
                          ++position)
                     {
                         const NodeID x = remaining_nodes[position].id;
@@ -494,11 +496,12 @@ class GraphContractor
                 });
 
             tbb::parallel_for(
-                tbb::blocked_range<int>(
+                tbb::blocked_range<NodeID>(
                     begin_independent_nodes_idx, end_independent_nodes_idx, DeleteGrainSize),
-                [this, &remaining_nodes, &thread_data_list](const tbb::blocked_range<int> &range) {
+                [this, &remaining_nodes, &thread_data_list](
+                    const tbb::blocked_range<NodeID> &range) {
                     ContractorThreadData *data = thread_data_list.GetThreadData();
-                    for (int position = range.begin(), end = range.end(); position != end;
+                    for (auto position = range.begin(), end = range.end(); position != end;
                          ++position)
                     {
                         const NodeID x = remaining_nodes[position].id;
@@ -543,13 +546,14 @@ class GraphContractor
             if (!use_cached_node_priorities)
             {
                 tbb::parallel_for(
-                    tbb::blocked_range<int>(begin_independent_nodes_idx,
-                                            end_independent_nodes_idx,
-                                            NeighboursGrainSize),
+                    tbb::blocked_range<NodeID>(begin_independent_nodes_idx,
+                                               end_independent_nodes_idx,
+                                               NeighboursGrainSize),
                     [this, &node_priorities, &remaining_nodes, &node_depth, &thread_data_list](
-                        const tbb::blocked_range<int> &range) {
+                        const tbb::blocked_range<NodeID> &range) {
                         ContractorThreadData *data = thread_data_list.GetThreadData();
-                        for (int position = range.begin(), end = range.end(); position != end;
+                        for (auto position = range.begin(), end = range.end();
+                             position != end;
                              ++position)
                         {
                             NodeID x = remaining_nodes[position].id;
@@ -570,26 +574,27 @@ class GraphContractor
         {
             if (orig_node_id_from_new_node_id_map.size() > 0)
             {
-                tbb::parallel_for(tbb::blocked_range<int>(0, remaining_nodes.size(), InitGrainSize),
-                                  [this, &remaining_nodes](const tbb::blocked_range<int> &range) {
-                                      for (int x = range.begin(), end = range.end(); x != end; ++x)
-                                      {
-                                          const auto orig_id = remaining_nodes[x].id;
-                                          is_core_node[orig_node_id_from_new_node_id_map[orig_id]] =
-                                              true;
-                                      }
-                                  });
+                tbb::parallel_for(
+                    tbb::blocked_range<NodeID>(0, remaining_nodes.size(), InitGrainSize),
+                    [this, &remaining_nodes](const tbb::blocked_range<NodeID> &range) {
+                        for (auto x = range.begin(), end = range.end(); x != end; ++x)
+                        {
+                            const auto orig_id = remaining_nodes[x].id;
+                            is_core_node[orig_node_id_from_new_node_id_map[orig_id]] = true;
+                        }
+                    });
             }
             else
             {
-                tbb::parallel_for(tbb::blocked_range<int>(0, remaining_nodes.size(), InitGrainSize),
-                                  [this, &remaining_nodes](const tbb::blocked_range<int> &range) {
-                                      for (int x = range.begin(), end = range.end(); x != end; ++x)
-                                      {
-                                          const auto orig_id = remaining_nodes[x].id;
-                                          is_core_node[orig_id] = true;
-                                      }
-                                  });
+                tbb::parallel_for(
+                    tbb::blocked_range<NodeID>(0, remaining_nodes.size(), InitGrainSize),
+                    [this, &remaining_nodes](const tbb::blocked_range<NodeID> &range) {
+                        for (auto x = range.begin(), end = range.end(); x != end; ++x)
+                        {
+                            const auto orig_id = remaining_nodes[x].id;
+                            is_core_node[orig_id] = true;
+                        }
+                    });
             }
         }
         else
@@ -599,9 +604,8 @@ class GraphContractor
             is_core_node.clear();
         }
 
-        util::SimpleLogger().Write() << "[core] " << remaining_nodes.size() << " nodes "
-                                     << contractor_graph->GetNumberOfEdges() << " edges."
-                                     << std::endl;
+        util::Log() << "[core] " << remaining_nodes.size() << " nodes "
+                    << contractor_graph->GetNumberOfEdges() << " edges.";
 
         thread_data_list.data.clear();
     }
@@ -618,8 +622,9 @@ class GraphContractor
 
     template <class Edge> inline void GetEdges(util::DeallocatingVector<Edge> &edges)
     {
-        util::Percent p(contractor_graph->GetNumberOfNodes());
-        util::SimpleLogger().Write() << "Getting edges of minimized graph";
+        util::UnbufferedLog log;
+        log << "Getting edges of minimized graph ";
+        util::Percent p(log, contractor_graph->GetNumberOfNodes());
         const NodeID number_of_nodes = contractor_graph->GetNumberOfNodes();
         if (contractor_graph->GetNumberOfNodes())
         {

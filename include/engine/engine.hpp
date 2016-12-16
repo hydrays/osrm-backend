@@ -19,6 +19,8 @@
 #include "engine/plugins/viaroute.hpp"
 #include "engine/plugins/prediction.hpp"
 #include "engine/status.hpp"
+#include "util/exception.hpp"
+#include "util/exception_utils.hpp"
 #include "util/json_container.hpp"
 
 #include <memory>

@@ -1,7 +1,7 @@
 #ifndef OSRM_INCLUDE_UTIL_IO_HPP_
 #define OSRM_INCLUDE_UTIL_IO_HPP_
 
-#include "util/simple_logger.hpp"
+#include "util/log.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/numeric/conversion/cast.hpp>
@@ -54,7 +54,8 @@ template <typename simple_type>
 bool serializeVectorIntoAdjacencyArray(const std::string &filename,
                                        const std::vector<std::vector<simple_type>> &data)
 {
-    std::ofstream out_stream(filename, std::ios::binary);
+    storage::io::FileWriter file(filename, storage::io::FileWriter::HasNoFingerprint);
+
     std::vector<std::uint32_t> offsets;
     offsets.reserve(data.size() + 1);
     std::uint64_t current_offset = 0;
@@ -64,18 +65,23 @@ bool serializeVectorIntoAdjacencyArray(const std::string &filename,
         current_offset += vec.size();
         offsets.push_back(boost::numeric_cast<std::uint32_t>(current_offset));
     }
-    if (!serializeVector(out_stream, offsets))
-        return false;
 
     std::vector<simple_type> all_data;
     all_data.reserve(offsets.back());
     for (auto const &vec : data)
         all_data.insert(all_data.end(), vec.begin(), vec.end());
 
-    if (!serializeVector(out_stream, all_data))
+    if (!file.SerializeVector(offsets))
+    {
         return false;
+    }
 
-    return static_cast<bool>(out_stream);
+    if (!file.SerializeVector(all_data))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 template <typename simple_type, std::size_t WRITE_BLOCK_BUFFER_SIZE = 1024>
@@ -119,9 +125,10 @@ void deserializeAdjacencyArray(const std::string &filename,
 
     // offsets have to match up with the size of the data
     if (offsets.empty() || (offsets.back() != boost::numeric_cast<std::uint32_t>(data.size())))
-        throw util::exception("Error in " + filename + (offsets.empty()
-                                                            ? "Offsets are empty"
-                                                            : "Offset and data size do not match"));
+        throw util::exception(
+            "Error in " + filename +
+            (offsets.empty() ? "Offsets are empty" : "Offset and data size do not match") +
+            SOURCE_REF);
 }
 
 inline bool serializeFlags(const boost::filesystem::path &path, const std::vector<bool> &flags)
@@ -147,8 +154,7 @@ inline bool serializeFlags(const boost::filesystem::path &path, const std::vecto
         ++chunk_count;
         flag_stream.write(reinterpret_cast<const char *>(&chunk), sizeof(chunk));
     }
-    SimpleLogger().Write() << "Wrote " << number_of_bits << " bits in " << chunk_count
-                           << " chunks (Flags).";
+    Log() << "Wrote " << number_of_bits << " bits in " << chunk_count << " chunks (Flags).";
     return static_cast<bool>(flag_stream);
 }
 

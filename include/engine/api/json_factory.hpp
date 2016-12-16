@@ -40,6 +40,11 @@ util::json::Array coordinateToLonLat(const util::Coordinate coordinate);
 
 std::string modeToString(const extractor::TravelMode mode);
 
+/**
+ * Ensures that a bearing value is a whole number, and clamped to the range 0-359
+ */
+inline double roundAndClampBearing(double bearing) { return std::fmod(std::round(bearing), 360); }
+
 } // namespace detail
 
 template <unsigned POLYLINE_PRECISION, typename ForwardIter>
@@ -54,22 +59,25 @@ util::json::Object makeGeoJSONGeometry(ForwardIter begin, ForwardIter end)
     auto num_coordinates = std::distance(begin, end);
     BOOST_ASSERT(num_coordinates != 0);
     util::json::Object geojson;
+    geojson.values["type"] = "LineString";
+    util::json::Array coordinates;
     if (num_coordinates > 1)
     {
-        geojson.values["type"] = "LineString";
-        util::json::Array coordinates;
         coordinates.values.reserve(num_coordinates);
-        std::transform(
-            begin, end, std::back_inserter(coordinates.values), &detail::coordinateToLonLat);
-        geojson.values["coordinates"] = std::move(coordinates);
+        auto into = std::back_inserter(coordinates.values);
+        std::transform(begin, end, into, &detail::coordinateToLonLat);
     }
     else if (num_coordinates > 0)
     {
-        geojson.values["type"] = "Point";
-        util::json::Array coordinates;
-        coordinates.values.push_back(detail::coordinateToLonLat(*begin));
-        geojson.values["coordinates"] = std::move(coordinates);
+        // For a single location we create a [location, location] LineString
+        // instead of a single Point making the GeoJSON output consistent.
+        coordinates.values.reserve(2);
+        auto location = detail::coordinateToLonLat(*begin);
+        coordinates.values.push_back(location);
+        coordinates.values.push_back(location);
     }
+    geojson.values["coordinates"] = std::move(coordinates);
+
     return geojson;
 }
 

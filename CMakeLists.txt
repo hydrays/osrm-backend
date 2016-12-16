@@ -31,7 +31,6 @@ if(ENABLE_MASON)
   set(MASON_STXXL_VERSION "1.4.1")
   set(MASON_EXPAT_VERSION "2.2.0")
   set(MASON_LUA_VERSION "5.2.4")
-  set(MASON_LUABIND_VERSION "e414c57bcb687bb3091b7c55bbff6947f052e46b")
   set(MASON_BZIP2_VERSION "1.0.6")
   set(MASON_TBB_VERSION "43_20150316")
 
@@ -55,6 +54,8 @@ set(OSRM_VERSION_MAJOR 5)
 set(OSRM_VERSION_MINOR 5)
 set(OSRM_VERSION_PATCH 0)
 set(OSRM_VERSION "${OSRM_VERSION_MAJOR}.${OSRM_VERSION_MINOR}.${OSRM_VERSION_PATCH}")
+
+add_definitions(-DOSRM_PROJECT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # these two functions build up custom variables:
 #   DEPENDENCIES_INCLUDE_DIRS and OSRM_DEFINES
@@ -90,8 +91,20 @@ if(WIN32 AND MSVC_VERSION LESS 1900)
   message(FATAL_ERROR "Building with Microsoft compiler needs Latest Visual Studio 2015 (Community or better)")
 endif()
 
+# Strictly require GCC>=4.9 and Clang>=3.4 - GCC 4.8 is already too old for C++14.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
+    message(FATAL_ERROR "GCC>=4.9 required. In case you are on Ubuntu upgrade via ppa:ubuntu-toolchain-r/test")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.4)
+    message(FATAL_ERROR "Clang>=3.4 required. In case you are on Ubuntu upgrade via http://apt.llvm.org")
+  endif()
+endif()
+
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/include/)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sol2/)
 include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/third_party/variant/include)
 
 add_custom_target(FingerPrintConfigure ALL ${CMAKE_COMMAND}
@@ -226,7 +239,7 @@ if(CMAKE_BUILD_TYPE MATCHES Release OR CMAKE_BUILD_TYPE MATCHES MinRelSize OR CM
       find_program(GCC_AR gcc-ar)
       find_program(GCC_RANLIB gcc-ranlib)
       if ("${GCC_AR}" STREQUAL "GCC_AR-NOTFOUND" OR "${GCC_RANLIB}" STREQUAL "GCC_RANLIB-NOTFOUND")
-        message(WARNING "GCC specific binutils not found.")
+        message(WARNING "GCC specific binutils not found. In case of linker issues export env vars: AR=gcc-ar, NM=gcc-nm, RANLIB=gcc-ranlib")
       else()
         message(STATUS "Using GCC specific binutils for LTO:")
         message(STATUS " ${GCC_AR}")
@@ -280,7 +293,7 @@ endif()
 
 # Configuring compilers
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wuninitialized -Wunreachable-code -Wstrict-overflow=2 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fPIC -fcolor-diagnostics")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wuninitialized -Wunreachable-code -Wstrict-overflow=2 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fPIC -fcolor-diagnostics -ftemplate-depth=1024")
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   set(COLOR_FLAG "-fdiagnostics-color=auto")
   check_cxx_compiler_flag("-fdiagnostics-color=auto" HAS_COLOR_FLAG)
@@ -288,7 +301,7 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     set(COLOR_FLAG "")
   endif()
   # using GCC
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wuninitialized -Wunreachable-code -Wstrict-overflow=1 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 ${COLOR_FLAG} -fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wuninitialized -Wunreachable-code -Wstrict-overflow=1 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 ${COLOR_FLAG} -fPIC -ftemplate-depth=1024")
   if(WIN32) # using mingw
     add_dependency_defines(-DWIN32)
     set(OPTIONAL_SOCKET_LIBS ws2_32 wsock32)
@@ -401,10 +414,6 @@ if(ENABLE_MASON)
   add_dependency_includes(${MASON_PACKAGE_lua_INCLUDE_DIRS})
   set(USED_LUA_LIBRARIES ${MASON_PACKAGE_lua_STATIC_LIBS})
 
-  mason_use(luabind_lua524 VERSION ${MASON_LUABIND_VERSION})
-  add_dependency_includes(${MASON_PACKAGE_luabind_lua524_INCLUDE_DIRS})
-  set(LUABIND_LIBRARY ${MASON_PACKAGE_luabind_lua524_STATIC_LIBS})
-
   mason_use(bzip2 VERSION ${MASON_BZIP2_VERSION})
   add_dependency_includes(${MASON_PACKAGE_bzip2_INCLUDE_DIRS})
   set(BZIP2_LIBRARIES ${MASON_PACKAGE_bzip2_STATIC_LIBS})
@@ -445,18 +454,17 @@ if(ENABLE_MASON)
 
 else()
 
-  find_package(Boost 1.49.0 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+  find_package(Boost 1.54 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
   add_dependency_includes(${Boost_INCLUDE_DIRS})
+  if(WIN32 AND Boost_VERSION VERSION_LESS 106200)
+    message(FATAL_ERROR "Building with MSVC needs Boost 1.62 with CXX11_CONSTEXPR support")
+  endif()
 
   find_package(TBB REQUIRED)
   add_dependency_includes(${TBB_INCLUDE_DIR})
   if(WIN32 AND CMAKE_BUILD_TYPE MATCHES Debug)
     set(TBB_LIBRARIES ${TBB_DEBUG_LIBRARIES})
   endif()
-  find_package(Luabind REQUIRED)
-  add_dependency_includes(${LUABIND_INCLUDE_DIR})
-  set(USED_LUA_LIBRARIES ${LUA_LIBRARY})
-  add_dependency_includes(${LUA_INCLUDE_DIR})
 
   find_package(EXPAT REQUIRED)
   add_dependency_includes(${EXPAT_INCLUDE_DIRS})
@@ -470,6 +478,33 @@ else()
   if(BUILD_COMPONENTS)
     find_package(GDAL)
   endif()
+
+  FIND_PACKAGE(Lua 5.2 EXACT)
+  IF (LUA_FOUND)
+      MESSAGE(STATUS "Using Lua ${LUA_VERSION_STRING}")
+  ELSE()
+    FIND_PACKAGE(Lua 5.1 EXACT)
+    IF (LUA_FOUND)
+      MESSAGE(STATUS "Using Lua ${LUA_VERSION_STRING}")
+    ELSE()
+      # Now fall back to a lua verison without exact
+      # in case this cmake version also forces patch versions
+      FIND_PACKAGE(Lua 5.2)
+      IF (LUA_FOUND)
+          MESSAGE(STATUS "Using Lua ${LUA_VERSION_STRING}")
+      ELSE()
+        FIND_PACKAGE(Lua 5.1)
+        IF (LUA_FOUND)
+          MESSAGE(STATUS "Using Lua ${LUA_VERSION_STRING}")
+        ELSE()
+          MESSAGE(FATAL_ERROR "Lua 5.1 or 5.2 was not found.")
+        ENDIF()
+      ENDIF()
+    ENDIF()
+  ENDIF()
+
+  set(USED_LUA_LIBRARIES ${LUA_LIBRARY})
+  add_dependency_includes(${LUA_INCLUDE_DIR})
 
   # add a target to generate API documentation with Doxygen
   find_package(Doxygen)
@@ -509,7 +544,6 @@ add_dependency_includes(${ZLIB_INCLUDE_DIRS})
 if(NOT WIN32 AND NOT Boost_USE_STATIC_LIBS)
   add_dependency_defines(-DBOOST_TEST_DYN_LINK)
 endif()
-
 
 if(NOT WIN32 AND NOT Boost_USE_STATIC_LIBS)
   add_dependency_defines(-DBOOST_TEST_DYN_LINK)
@@ -554,7 +588,6 @@ set(EXTRACTOR_LIBRARIES
     ${BOOST_BASE_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
     ${EXPAT_LIBRARIES}
-    ${LUABIND_LIBRARY}
     ${USED_LUA_LIBRARIES}
     ${OSMIUM_LIBRARIES}
     ${STXXL_LIBRARY}
@@ -564,7 +597,6 @@ set(EXTRACTOR_LIBRARIES
 set(CONTRACTOR_LIBRARIES
     ${BOOST_BASE_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
-    ${LUABIND_LIBRARY}
     ${USED_LUA_LIBRARIES}
     ${STXXL_LIBRARY}
     ${TBB_LIBRARIES}
@@ -733,3 +765,21 @@ if (ENABLE_FUZZING)
 
   add_subdirectory(fuzz)
 endif ()
+
+
+## add headers sanity check target that includes all headers independently
+set(check_headers_dir "${PROJECT_BINARY_DIR}/check-headers")
+file(GLOB_RECURSE headers_to_check
+  ${PROJECT_BINARY_DIR}/*.hpp
+  ${PROJECT_SOURCE_DIR}/include/*.hpp)
+foreach(header ${headers_to_check})
+  get_filename_component(filename ${header} NAME_WE)
+  set(filename "${check_headers_dir}/${filename}.cpp")
+  if (NOT EXISTS ${filename})
+    file(WRITE ${filename} "#include \"${header}\"\n")
+  endif()
+  list(APPEND sources ${filename})
+endforeach()
+add_library(check-headers STATIC EXCLUDE_FROM_ALL ${sources})
+set_target_properties(check-headers PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${check_headers_dir})
+
