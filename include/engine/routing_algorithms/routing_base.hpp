@@ -246,6 +246,7 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
                 std::vector<NodeID> id_vector;
                 std::vector<EdgeWeight> weight_vector;
                 std::vector<DatasourceID> datasource_vector;
+
                 if (geometry_index.forward)
                 {
                     id_vector = facade.GetUncompressedForwardGeometry(geometry_index.id);
@@ -283,6 +284,7 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
                 {
                     unpacked_path.push_back(
                         PathData{id_vector[segment_idx + 1],
+				 edge_data.id,
                                  name_index,
                                  weight_vector[segment_idx],
                                  extractor::guidance::TurnInstruction::NO_TURN(),
@@ -363,6 +365,7 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
             BOOST_ASSERT(phantom_node_pair.target_phantom.forward_travel_mode > 0);
             unpacked_path.push_back(PathData{
                 id_vector[start_index < end_index ? segment_idx + 1 : segment_idx - 1],
+		phantom_node_pair.target_phantom.packed_geometry_id,		    
                 phantom_node_pair.target_phantom.name_id,
                 weight_vector[segment_idx],
                 extractor::guidance::TurnInstruction::NO_TURN(),
