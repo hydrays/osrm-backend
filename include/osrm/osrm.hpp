@@ -85,6 +85,16 @@ class OSRM final
      */
     Status Route(const RouteParameters &parameters, json::Object &result) const;
 
+
+    /**
+     *This function is a copy for Route function, which is used to predict traffic condition
+     *
+     * \param parameters route query specific parameters
+     * \return Status indicating success for the query or failure
+     * \see Status, RouteParameters and json::Object
+     */
+    Status Prediction(const RouteParameters &parameters, json::Object &result) const;
+
     /**
      * Distance tables for coordinates.
      *

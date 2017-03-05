@@ -13,6 +13,7 @@
 #include "engine/engine_config.hpp"
 #include "engine/engine_config.hpp"
 #include "engine/plugins/match.hpp"
+#include "engine/plugins/prediction.hpp"
 #include "engine/plugins/nearest.hpp"
 #include "engine/plugins/table.hpp"
 #include "engine/plugins/tile.hpp"
@@ -37,6 +38,9 @@ class EngineInterface
   public:
     virtual ~EngineInterface() = default;
     virtual Status Route(const api::RouteParameters &parameters,
+                         util::json::Object &result) const = 0;
+    //don't forget to add this virtual function 
+    virtual Status Prediction(const api::RouteParameters &parameters,
                          util::json::Object &result) const = 0;
     virtual Status Table(const api::TableParameters &parameters,
                          util::json::Object &result) const = 0;

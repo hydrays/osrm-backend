@@ -22,8 +22,7 @@ namespace plugins
 {
 
 PredictionPlugin::PredictionPlugin(int max_locations_viaroute)
-    : traffic_prediction(heaps),
-    max_locations_viaroute(max_locations_viaroute)
+    : max_locations_viaroute(max_locations_viaroute)
 {
 }
 
@@ -116,12 +115,9 @@ Status PredictionPlugin::HandleRequest(const datafacade::ContiguousInternalMemor
         raw_route =
             algorithms.ShortestPathSearch(start_end_nodes, route_parameters.continue_straight);
     }*/
-    traffic_prediction(*facade,
-               start_end_nodes,
-               route_parameters.continue_straight,
-               raw_route);
+    
 
-
+    raw_route = algorithms.TrafficPrediction(start_end_nodes, route_parameters.continue_straight);
     // we can only know this after the fact, different SCC ids still
     // allow for connection in one direction.
     if (raw_route.is_valid())

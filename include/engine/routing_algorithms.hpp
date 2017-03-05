@@ -9,7 +9,9 @@
 #include "engine/routing_algorithms/many_to_many.hpp"
 #include "engine/routing_algorithms/map_matching.hpp"
 #include "engine/routing_algorithms/shortest_path.hpp"
+#include "engine/routing_algorithms/traffic_prediction.hpp"
 #include "engine/routing_algorithms/tile_turns.hpp"
+
 
 namespace osrm
 {
@@ -24,6 +26,11 @@ class RoutingAlgorithmsInterface
 
     virtual InternalRouteResult
     ShortestPathSearch(const std::vector<PhantomNodes> &phantom_node_pair,
+                       const boost::optional<bool> continue_straight_at_waypoint) const = 0;
+
+    //add new traffic function
+    virtual InternalRouteResult
+    TrafficPrediction(const std::vector<PhantomNodes> &phantom_node_pair,
                        const boost::optional<bool> continue_straight_at_waypoint) const = 0;
 
     virtual InternalRouteResult
@@ -75,6 +82,14 @@ template <typename AlgorithmT> class RoutingAlgorithms final : public RoutingAlg
         const boost::optional<bool> continue_straight_at_waypoint) const final override
     {
         return routing_algorithms::shortestPathSearch(
+            heaps, facade, phantom_node_pair, continue_straight_at_waypoint);
+    }
+
+    InternalRouteResult TrafficPrediction(
+        const std::vector<PhantomNodes> &phantom_node_pair,
+        const boost::optional<bool> continue_straight_at_waypoint) const final override
+    {
+        return routing_algorithms::trafficPrediction(
             heaps, facade, phantom_node_pair, continue_straight_at_waypoint);
     }
 
