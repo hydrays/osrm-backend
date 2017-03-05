@@ -54,6 +54,7 @@ template <typename AlgorithmT> class Engine final : public EngineInterface
   public:
     explicit Engine(const EngineConfig &config)
         : route_plugin(config.max_locations_viaroute),       //
+          prediction_plugin(config.max_locations_viaroute),  //add new plugin
           table_plugin(config.max_locations_distance_table), //
           nearest_plugin(config.max_results_nearest),        //
           trip_plugin(config.max_locations_trip),            //
@@ -89,6 +90,15 @@ template <typename AlgorithmT> class Engine final : public EngineInterface
         auto facade = facade_provider->Get();
         auto algorithms = RoutingAlgorithms<AlgorithmT>{heaps, *facade};
         return route_plugin.HandleRequest(*facade, algorithms, params, result);
+    }
+
+    //add new prediction function 
+    Status Prediction(const api::RouteParameters &params,
+                 util::json::Object &result) const override final
+    {
+        auto facade = facade_provider->Get();
+        auto algorithms = RoutingAlgorithms<AlgorithmT>{heaps, *facade};
+        return prediction_plugin.HandleRequest(*facade, algorithms, params, result);
     }
 
     Status Table(const api::TableParameters &params,
@@ -136,6 +146,7 @@ template <typename AlgorithmT> class Engine final : public EngineInterface
     mutable SearchEngineData heaps;
 
     const plugins::ViaRoutePlugin route_plugin;
+    const plugins::PredictionPlugin prediction_plugin;
     const plugins::TablePlugin table_plugin;
     const plugins::NearestPlugin nearest_plugin;
     const plugins::TripPlugin trip_plugin;

@@ -61,6 +61,13 @@ engine::Status OSRM::Route(const engine::api::RouteParameters &params,
     return engine_->Route(params, result);
 }
 
+//add new function
+engine::Status OSRM::Prediction(const engine::api::RouteParameters &params,
+                           util::json::Object &result) const
+{
+    return engine_->Prediction(params, result);
+}
+
 engine::Status OSRM::Table(const engine::api::TableParameters &params, json::Object &result) const
 {
     return engine_->Table(params, result);
