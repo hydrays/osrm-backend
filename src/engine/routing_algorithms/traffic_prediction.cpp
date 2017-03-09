@@ -470,7 +470,7 @@ trafficPredictionImpl(SearchEngineData &engine_working_data,
                    total_weight_to_forward,
                    raw_route_data);
     }
-
+    
     std::cout << "hello world!\n";
         auto number_of_routes = raw_route_data.has_alternative() ? 2UL : 1UL;
     std::cout << "number of routes" << number_of_routes << "\n";
@@ -478,10 +478,10 @@ trafficPredictionImpl(SearchEngineData &engine_working_data,
         auto number_of_legs = raw_route_data.segment_end_coordinates.size();
     std::cout << "number of legs" << number_of_legs << "\n";
     
-        for (auto idx : util::irange<std::size_t>(0UL, number_of_legs))
-        {
-            const auto &phantoms = raw_route_data.segment_end_coordinates[idx];
-            const auto &path_data = raw_route_data.unpacked_path_segments[idx];
+    for (auto idx : util::irange<std::size_t>(0UL, number_of_legs))
+    {
+        const auto &phantoms = raw_route_data.segment_end_coordinates[idx];
+        const auto &path_data = raw_route_data.unpacked_path_segments[idx];
 
         //                          u       *      v
         //                          0 -- 1 -- 2 -- 3
@@ -499,21 +499,22 @@ trafficPredictionImpl(SearchEngineData &engine_working_data,
         auto prev_coordinate = phantoms.source_phantom.location;
         for (const auto &path_point : path_data)
         {
-        auto coordinate = facade.GetCoordinateOfNode(path_point.turn_via_node);
-        auto eta = path_point.duration_until_turn;      
-        current_distance =
-            util::coordinate_calculation::haversineDistance(prev_coordinate, coordinate);
-        cumulative_distance += current_distance;
-        prev_coordinate = coordinate;
-        std::cout << "edge id: " << path_point.edge_id <<
-            " name: " << path_point.name_id <<
-            " eta: " << eta <<
-            " current distance: " << current_distance << "\n";      
+            auto coordinate = facade.GetCoordinateOfNode(path_point.turn_via_node);
+            auto eta = path_point.duration_until_turn;      
+            current_distance =
+                util::coordinate_calculation::haversineDistance(prev_coordinate, coordinate);
+            cumulative_distance += current_distance;
+            prev_coordinate = coordinate;
+            std::cout << "edge id: " << path_point.edge_id <<
+                " name: " << path_point.name_id <<
+                " eta: " << eta <<
+                " current distance: " << current_distance << "\n";      
         }
         current_distance =
         util::coordinate_calculation::haversineDistance(prev_coordinate, phantoms.target_phantom.location);
         cumulative_distance += current_distance;
-
+    }
+    
     return raw_route_data;
 }
 }

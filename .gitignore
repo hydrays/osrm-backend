@@ -48,6 +48,10 @@ Thumbs.db
 /example/build/
 /test/data/monaco*
 /cmake/postinst
+/cmake-build-debug
+/*/build/
+/traffic_prediction/data/
+/.idea/
 
 # Eclipse related files #
 #########################

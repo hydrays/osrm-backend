@@ -27,8 +27,9 @@ int main(int argc, const char *argv[])
     // Configure based on a .osrm base path, and no datasets in shared mem from osrm-datastore
     EngineConfig config;
     config.storage_config = {argv[1]};
-    config.use_shared_memory = false;
 
+    config.use_shared_memory = false;
+    
     // Routing machine with several services (such as Route, Table, Nearest, Trip, Match)
     const OSRM osrm{config};
 
@@ -41,7 +42,6 @@ int main(int argc, const char *argv[])
 
     // Response is in JSON format
     json::Object result;
-
     // Execute routing request, this does the heavy lifting
     const auto status = osrm.Prediction(params, result);
 

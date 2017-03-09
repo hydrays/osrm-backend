@@ -18,6 +18,7 @@ namespace osrm
 
 OSRM::OSRM(engine::EngineConfig &config)
 {
+    // std::cout << "osrm constructor 123 \n" << std::endl;
     if (config.algorithm == EngineConfig::Algorithm::CoreCH ||
         config.algorithm == EngineConfig::Algorithm::CH)
     {
