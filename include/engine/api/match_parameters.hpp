@@ -67,6 +67,8 @@ struct MatchParameters : public RouteParameters
     }
 
     std::vector<unsigned> timestamps;
+    std::string data_file_dir;
+    std::string data_file_name; // this attribute is used to process car data and output some infomation
     bool IsValid() const
     {
         return RouteParameters::IsValid() &&

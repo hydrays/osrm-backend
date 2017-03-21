@@ -15,6 +15,7 @@ osrm-deps
 *.exe
 *.o
 *.so
+*.cmake
 
 # Packages #
 ############
@@ -50,7 +51,7 @@ Thumbs.db
 /cmake/postinst
 /cmake-build-debug
 /*/build/
-/traffic_prediction/data/
+/data/
 /.idea/
 
 # Eclipse related files #

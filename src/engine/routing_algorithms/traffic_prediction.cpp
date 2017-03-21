@@ -473,11 +473,12 @@ trafficPredictionImpl(SearchEngineData &engine_working_data,
     
     std::cout << "hello world!\n";
         auto number_of_routes = raw_route_data.has_alternative() ? 2UL : 1UL;
-    std::cout << "number of routes" << number_of_routes << "\n";
+    std::cout << "number of routes is " << number_of_routes << "\n";
     
         auto number_of_legs = raw_route_data.segment_end_coordinates.size();
-    std::cout << "number of legs" << number_of_legs << "\n";
+    std::cout << "number of legs is " << number_of_legs << "\n";
     
+    auto cumulative_distance = 0.;
     for (auto idx : util::irange<std::size_t>(0UL, number_of_legs))
     {
         const auto &phantoms = raw_route_data.segment_end_coordinates[idx];
@@ -494,9 +495,10 @@ trafficPredictionImpl(SearchEngineData &engine_working_data,
         // const std::vector<NodeID> source_geometry =
         //  facade.GetUncompressedForwardGeometry(source_node.packed_geometry_id);
 
-        auto cumulative_distance = 0.;
+        
         auto current_distance = 0.;
         auto prev_coordinate = phantoms.source_phantom.location;
+        std::cout << "idx = " << idx << std::endl;
         for (const auto &path_point : path_data)
         {
             auto coordinate = facade.GetCoordinateOfNode(path_point.turn_via_node);
@@ -510,11 +512,12 @@ trafficPredictionImpl(SearchEngineData &engine_working_data,
                 " eta: " << eta <<
                 " current distance: " << current_distance << "\n";      
         }
+        std::cout << "-------------------" << std::endl;
         current_distance =
         util::coordinate_calculation::haversineDistance(prev_coordinate, phantoms.target_phantom.location);
         cumulative_distance += current_distance;
     }
-    
+    std::cout << "cumulative_distance: " << cumulative_distance << std::endl; 
     return raw_route_data;
 }
 }

@@ -296,7 +296,6 @@ class RouteAPI : public BaseAPI
                                   });
                     annotation.values["nodes"] = std::move(nodes);
                 }
-
                 annotations.push_back(std::move(annotation));
             }
         }

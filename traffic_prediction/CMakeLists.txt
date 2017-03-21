@@ -28,9 +28,11 @@ endif()
 
 link_directories(${LibOSRM_LIBRARY_DIRS})
 add_executable(traffic_prediction traffic_prediction.cpp)
+add_executable(lmatch lmatch.cpp)
 
 find_package(LibOSRM REQUIRED)
 
 target_link_libraries(traffic_prediction ${LibOSRM_LIBRARIES} ${LibOSRM_DEPENDENT_LIBRARIES})
+target_link_libraries(lmatch ${LibOSRM_LIBRARIES} ${LibOSRM_DEPENDENT_LIBRARIES})
 include_directories(SYSTEM ${LibOSRM_INCLUDE_DIRS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LibOSRM_CXXFLAGS}")

@@ -19,6 +19,10 @@
 #include <string>
 #include <vector>
 
+#include <unistd.h>  // linux access
+#include <sys/types.h>  //linux mkdir
+#include <sys/stat.h>  // linux mkdir
+
 namespace osrm
 {
 namespace engine
@@ -193,6 +197,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
 
     if (sub_matchings.size() == 0)
     {
+        std::cout << "no match error" << std::endl;
         return Error("NoMatch", "Could not match the trace.", json_result);
     }
 
@@ -204,10 +209,25 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
         // FIXME we only run this to obtain the geometry
         // The clean way would be to get this directly from the map matching plugin
         PhantomNodes current_phantom_node_pair;
+        std::cout << "sub_matchings nodes size = " << sub_matchings[index].nodes.size() << std::endl;
+
+        /*for (unsigned i = 0; i < sub_matchings[index].nodes.size(); ++i) 
+        {
+          auto phantom_node = sub_matchings[index].nodes[i];
+          auto indice = sub_matchings[index].indices[i];
+          auto alter = sub_matchings[index].alternatives_count[i];
+          std::cout << "--------------------------------" << std::endl;
+          std::cout << phantom_node << std::endl;
+          std::cout << "indice is " << indice << std::endl;
+          std::cout << "alter is " << alter << std::endl;
+        }*/
+
         for (unsigned i = 0; i < sub_matchings[index].nodes.size() - 1; ++i)
         {
             current_phantom_node_pair.source_phantom = sub_matchings[index].nodes[i];
             current_phantom_node_pair.target_phantom = sub_matchings[index].nodes[i + 1];
+
+
             BOOST_ASSERT(current_phantom_node_pair.source_phantom.IsValid());
             BOOST_ASSERT(current_phantom_node_pair.target_phantom.IsValid());
             sub_routes[index].segment_end_coordinates.emplace_back(current_phantom_node_pair);
@@ -215,10 +235,145 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
         // force uturns to be on, since we split the phantom nodes anyway and only have
         // bi-directional
         // phantom nodes for possible uturns
-        sub_routes[index] =
-            algorithms.ShortestPathSearch(sub_routes[index].segment_end_coordinates, {false});
+        
+
+        sub_routes[index] = algorithms.ShortestPathSearch(sub_routes[index].segment_end_coordinates, {false});
+
+        //sub_routes[index] = algorithms.TrafficPrediction(sub_routes[index].segment_end_coordinates, {false});
+
+        auto &raw_route_data = sub_routes[index]; 
+        
+        auto number_of_routes = raw_route_data.has_alternative() ? 2UL : 1UL;
+        std::cout << "number of routes is " << number_of_routes << "\n";
+    
+        auto number_of_legs = raw_route_data.segment_end_coordinates.size();
+        std::cout << "number of legs is " << number_of_legs << "\n";
+    
+        auto cumulative_distance = 0.;
+        std::cout << "parameters size = " << parameters.coordinates.size() << std::endl;
+
+        /*for (auto idx : util::irange<std::size_t>(0LL, parameters.coordinates.size())) 
+        {
+          const auto &coordinate = parameters.coordinates[idx];
+          const auto &timestamp = parameters.timestamps[idx];
+          std::cout << "coordinate lng = " << coordinate.lon << ", lat = " << coordinate.lat << ", time = " << timestamp << std::endl;
+
+        }*/
+
+        FILE * out_data_file;
+        std::string out_file_dir = "out/";
+        std::string out_data_dir = out_file_dir + parameters.data_file_dir + "/";
+        std::string out_data_file_name = out_data_dir + "path_" + parameters.data_file_name;
+        if (access(out_file_dir.c_str(), 0) == -1)  
+        {
+            int flag = -1;  
+            flag=mkdir(out_file_dir.c_str(), 0777);  
+            if (flag == 0)  
+            {  
+                std::cout<<"make successfully"<<std::endl;  
+            } else {  
+                std::cout<<"make errorly"<<std::endl;  
+            }
+        }
+
+        if (access(out_data_dir.c_str(), 0) == -1)  
+        {
+            mkdir(out_data_dir.c_str(), 0777);  
+        }
+
+        out_data_file = fopen(out_data_file_name.c_str(), "a+");
+        if ( out_data_file == NULL ){
+          std::cout << "open out_data_file error: " << out_data_file_name << std::endl;
+          getchar();
+        }
+
+        fprintf(out_data_file,"-1,0,0,0,0,0,0 \n");
+
+        auto prev_point_index = sub_matchings[index].indices[0];
+        auto start_time_rec = parameters.timestamps[prev_point_index];
+
+        for (auto idx : util::irange<std::size_t>(0UL, number_of_legs))
+        {
+          const auto &phantoms = raw_route_data.segment_end_coordinates[idx];
+          const auto &path_data = raw_route_data.unpacked_path_segments[idx];
+
+          prev_point_index = sub_matchings[index].indices[idx];
+          const auto next_point_index = sub_matchings[index].indices[idx + 1];
+          const auto data_time_interval = parameters.timestamps[next_point_index] - parameters.timestamps[prev_point_index];
+          
+          auto start_time_cal = parameters.timestamps[prev_point_index];
+          auto end_time_rec = 0;
+          auto end_time_cal = 0;
+          //                          u       *      v
+          //                          0 -- 1 -- 2 -- 3
+          // fwd_segment_position:  1
+          // source node fwd:       1      1 -> 2 -> 3
+          // source node rev:       2 0 <- 1 <- 2
+
+          // const auto source_segment_start_coordinate =
+          //  source_node.fwd_segment_position + (reversed_source ? 1 : 0);
+          // const std::vector<NodeID> source_geometry =
+          //  facade.GetUncompressedForwardGeometry(source_node.packed_geometry_id);
+
+          
+          auto current_distance = 0.;
+          auto prev_coordinate = phantoms.source_phantom.location;
+          //std::cout << "idx = " << idx << std::endl;
+          auto tmp_sum_distance = 0.;
+          std::vector<double> path_distances;
+          std::vector<int> time_record;  // this time comes from OSRM calculation results
+          std::vector<int> time_calc;  // this time is based the proportion of distance to divide the time from car data
+          std::vector<int> edge_id_list; 
+          std::vector<int> name_list;
+
+          //std::cout << "start_time_rec: " << start_time_rec << ", end_time_rec: " << end_time_rec << std::endl;
+          //std::cout << "start_time_cal: " << start_time_cal << ", end_time_cal: " << end_time_cal << std::endl;
+
+          for (const auto &path_point : path_data)
+          {
+              auto coordinate = facade.GetCoordinateOfNode(path_point.turn_via_node);
+              auto eta = path_point.duration_until_turn;      
+              current_distance =
+                  util::coordinate_calculation::haversineDistance(prev_coordinate, coordinate);
+              cumulative_distance += current_distance;
+
+              path_distances.push_back(current_distance);
+              time_record.push_back(eta);
+              edge_id_list.push_back(path_point.edge_id);
+              name_list.push_back(path_point.name_id);
+
+              tmp_sum_distance += current_distance;
+              prev_coordinate = coordinate;
+              /*std::cout << "edge id: " << path_point.edge_id <<
+                  " name: " << path_point.name_id <<
+                  " eta: " << eta <<
+                  " current distance: " << current_distance << "\n";  */    
+          }
+          //std::cout << "-------------------" << std::endl;
+
+          
+
+          for (unsigned i = 0; i < path_distances.size(); i++)
+          {
+            end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            end_time_rec = start_time_rec + time_record[i];
+            fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%f \n", start_time_cal, end_time_cal, 
+              start_time_rec, end_time_rec,edge_id_list[i],name_list[i],path_distances[i]);
+            start_time_rec = end_time_rec;
+            start_time_cal = end_time_cal;
+          }
+
+          current_distance =
+          util::coordinate_calculation::haversineDistance(prev_coordinate, phantoms.target_phantom.location);
+          cumulative_distance += current_distance;
+        }
+        fflush(out_data_file);
+        fclose(out_data_file);
+        //std::cout << "cumulative_distance: " << cumulative_distance << std::endl; 
+
         BOOST_ASSERT(sub_routes[index].shortest_path_length != INVALID_EDGE_WEIGHT);
     }
+
 
     api::MatchAPI match_api{facade, parameters};
     match_api.MakeResponse(sub_matchings, sub_routes, json_result);

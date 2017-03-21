@@ -14,6 +14,10 @@
 
 #include <cstdlib>
 
+struct MyCoordinate{
+    double lng, lat;
+}coord[100];
+
 int main(int argc, const char *argv[])
 {
     if (argc < 2)
@@ -36,9 +40,46 @@ int main(int argc, const char *argv[])
     // The following shows how to use the Route service; configure this service
     RouteParameters params;
 
+    MyCoordinate coord[] = {
+    {116.232933,39.8361359},
+    {116.2321854,39.8359718},
+    {116.2313156,39.8335724},
+    {116.2340164,39.8317986},
+    {116.2337799,39.8315735},
+    {116.226181,39.8370972},
+    {116.2181473,39.8449097},
+    {116.2144012,39.8537102},
+    {116.2091141,39.8630371},
+    {116.2029495,39.8719635},
+    {116.2027817,39.8819351},
+    {116.2053833,39.89217},
+    {116.2052002,39.9015961},
+    {116.2051697,39.9074783},
+    {116.2051315,39.9108009},
+    {116.205101,39.9133682},
+    {116.2058182,39.9178467},
+    {116.2062149,39.9251366},
+    {116.205986,39.9337921},
+    {116.2063675,39.9429054},
+    {116.2098694,39.9504433},
+    {116.2136002,39.9537125},
+    {116.2152328,39.9537773},
+    {116.2121353,39.9540558},
+    {116.2050629,39.9572449},
+    {116.2015305,39.9606056},
+    {116.2012634,39.9639244},
+    {116.2016296,39.9675407},
+    {116.2013702,39.9730377},
+    {116.200882,39.9775352},
+    {116.2009506,39.9815865},
+    {116.203949,39.9812126}};
     // Route in monaco
-    params.coordinates.push_back({util::FloatLongitude{116.29758}, util::FloatLatitude{39.831142}});
-    params.coordinates.push_back({util::FloatLongitude{116.29505}, util::FloatLatitude{39.836825}});
+    //params.coordinates.push_back({util::FloatLongitude{116.29758}, util::FloatLatitude{39.831142}});
+    //params.coordinates.push_back({util::FloatLongitude{116.29505}, util::FloatLatitude{39.836825}});
+
+    for (MyCoordinate coor: coord){
+        params.coordinates.push_back({util::FloatLongitude{coor.lng}, util::FloatLatitude{coor.lat}});
+    }
 
     // Response is in JSON format
     json::Object result;

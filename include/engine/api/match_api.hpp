@@ -34,8 +34,10 @@ class MatchAPI final : public RouteAPI
         util::json::Array routes;
         routes.values.reserve(number_of_routes);
         BOOST_ASSERT(sub_matchings.size() == sub_routes.size());
+
         for (auto index : util::irange<std::size_t>(0UL, sub_matchings.size()))
         {
+            std::cout << "In Match api the sub_matching size is: " << sub_matchings[index].indices.size() << std::endl;
             auto route = MakeRoute(sub_routes[index].segment_end_coordinates,
                                    sub_routes[index].unpacked_path_segments,
                                    sub_routes[index].source_traversed_in_reverse,
@@ -75,8 +77,9 @@ class MatchAPI final : public RouteAPI
                        point_index == std::numeric_limits<unsigned>::max();
             }
         };
-
+        // This place,the waypoints size is same as coordinates size
         std::vector<MatchingIndex> trace_idx_to_matching_idx(parameters.coordinates.size());
+
         for (auto sub_matching_index :
              util::irange(0u, static_cast<unsigned>(sub_matchings.size())))
         {

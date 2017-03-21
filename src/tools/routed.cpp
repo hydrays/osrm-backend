@@ -302,8 +302,9 @@ int main(int argc, const char *argv[]) try
 #endif
 
     auto routing_server = server::Server::CreateServer(ip_address, ip_port, requested_thread_num);
+    util::Log() << "route cpp construct routing_server";
     auto service_handler = std::make_unique<server::ServiceHandler>(config);
-
+    util::Log() << "route cpp construct service_handler";
     routing_server->RegisterServiceHandler(std::move(service_handler));
 
     if (trial_run)
