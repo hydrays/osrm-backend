@@ -292,6 +292,7 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
         // If the edge is a shortcut, we need to add the two halfs to the stack.
         if (data.shortcut)
         { // unpack
+            //该data.id或者表示shortcut的id或者edge_based node的id
             const NodeID middle_node_id = data.id;
             // Note the order here - we're adding these to a stack, so we
             // want the first->middle to get visited before middle->second
