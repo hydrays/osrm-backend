@@ -22,10 +22,10 @@ struct PathData
 {
     // id of via node of the turn
     NodeID turn_via_node;
-    // id of unpack edge  added
-    EdgeID edge_id;
     // name of the street that leads to the turn
     unsigned name_id;
+    // id of unpack edge  added
+    EdgeID edge_id;
     // weight that is traveled on the segment until the turn is reached
     EdgeWeight weight_until_turn;
     // duration that is traveled on the segment until the turn is reached

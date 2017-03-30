@@ -479,8 +479,8 @@ void unpackPath(const FacadeT &facade,
         BOOST_ASSERT(phantom_node_pair.target_phantom.forward_travel_mode > 0);
         unpacked_path.push_back(PathData{
             id_vector[start_index < end_index ? segment_idx + 1 : segment_idx - 1],
-            phantom_node_pair.target_phantom.packed_geometry_id,
             phantom_node_pair.target_phantom.name_id,
+            phantom_node_pair.target_phantom.packed_geometry_id,  //注意次序一定要和internal_route_result.cpp中的PathData中变量顺序一致
             weight_vector[segment_idx],
             duration_vector[segment_idx],
             extractor::guidance::TurnInstruction::NO_TURN(),
