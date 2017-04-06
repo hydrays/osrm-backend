@@ -305,12 +305,12 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
             std::forward<Callback>(callback)(edge, data);
         }
 
-        std::cout << "----------------------------------------------------" << std::endl;
+        /*std::cout << "----------------------------------------------------" << std::endl;
         std::cout << "edge_based_node id: " << data.id << std::endl;
         for (auto current_edge : facade.GetAdjacentEdgeRange(data.id))
         {
 
-        }
+        }*/
 
     }
 }

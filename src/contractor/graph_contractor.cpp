@@ -1,5 +1,9 @@
 #include "contractor/graph_contractor.hpp"
 
+#include <unistd.h>  // linux access
+#include <sys/types.h>  //linux mkdir
+#include <sys/stat.h>  // linux mkdir
+
 namespace osrm
 {
 namespace contractor
@@ -110,6 +114,11 @@ void GraphContractor::FlushDataAndRebuildContractorGraph(
     // remaining graph
     const auto number_of_nodes = contractor_graph->GetNumberOfNodes();
     std::vector<NodeID> new_node_id_from_orig_id_map(number_of_nodes, SPECIAL_NODEID);
+
+    //ljx comment: need to know the difference between number_of_nodes and remaining_nodes.size()
+    //std::cout << "number_of_nodes = " << number_of_nodes << ", remaining_nodes.size = " << remaining_nodes.size() << std::endl;
+    // process beijing.osrm,  number_of_nodes = 128362, remaining_nodes.size = 43973
+    
     for (const auto new_node_id : util::irange<std::size_t>(0UL, remaining_nodes.size()))
     {
         auto &node = remaining_nodes[new_node_id];
@@ -119,11 +128,17 @@ void GraphContractor::FlushDataAndRebuildContractorGraph(
         new_node_weights[new_node_id] = node_weights[node.id];
     }
     // build forward and backward renumbering map and remap ids in remaining_nodes
+    //int num_count = 0;
     for (const auto new_node_id : util::irange<std::size_t>(0UL, remaining_nodes.size()))
     {
         auto &node = remaining_nodes[new_node_id];
         // create renumbering maps in both directions
         orig_node_id_from_new_node_id_map[new_node_id] = node.id;
+        /*if(num_count <= 10){
+            std::cout << "idx = " << new_node_id << ", id = " << node.id << std::endl;
+            num_count ++;
+        }*/
+
         new_node_id_from_orig_id_map[node.id] = new_node_id;
         node.id = new_node_id;
     }
@@ -134,11 +149,12 @@ void GraphContractor::FlushDataAndRebuildContractorGraph(
         {
             ContractorGraph::EdgeData &data = contractor_graph->GetEdgeData(current_edge);
             const NodeID target = contractor_graph->GetTarget(current_edge);
+            // 已经被压缩的原始节点对应的新节点id为special_nodeid，即-1
             if (SPECIAL_NODEID == new_node_id_from_orig_id_map[source])
             {
                 external_edge_list.push_back({source, target, data});
             }
-            else
+            else  //处理未被压缩的节点
             {
                 // node is not yet contracted.
                 // add (renumbered) outgoing edges to new util::DynamicGraph.
@@ -154,6 +170,41 @@ void GraphContractor::FlushDataAndRebuildContractorGraph(
             }
         }
     }
+
+
+    FILE * out_file1, *out_file2, *out_file3;
+    std::string out_file_dir = "out/";
+    std::string out_data_file1 = out_file_dir + "remain_node.txt";
+    std::string out_data_file2 = out_file_dir + "orign_to_new.txt";
+    std::string out_data_file3 = out_file_dir + "new_to_origin.txt";
+
+    if (access(out_file_dir.c_str(), 0) == -1)  
+    {
+        int flag = -1;  
+        flag = mkdir(out_file_dir.c_str(), 0777);  
+        if (flag == 0)  
+        {  
+            std::cout<<"make successfully"<<std::endl;  
+        } else {  
+            std::cout<<"make errorly"<<std::endl;  
+        }
+    }
+
+    out_file1 = fopen(out_data_file1.c_str(), "w");
+    out_file2 = fopen(out_data_file2.c_str(), "w");
+    out_file3 = fopen(out_data_file3.c_str(), "w");
+
+    for (const auto i : util::irange<std::size_t>(0UL, remaining_nodes.size()))
+    {
+        fprintf(out_file1, "%lu, %d\n", i, remaining_nodes[i].id);
+        fprintf(out_file2, "%lu, %d\n", i, orig_node_id_from_new_node_id_map[i]);
+        fprintf(out_file3, "%lu, %d\n", i, new_node_id_from_orig_id_map[i]);
+    }
+
+    fclose(out_file1);
+    fclose(out_file2);
+    fclose(out_file3);
+
     // Replace old priorities array by new one
     node_priorities.swap(new_node_priority);
     // Delete old node_priorities vector
@@ -200,6 +251,9 @@ void GraphContractor::Run(double core_factor)
                               remaining_nodes[x].id = x;
                           }
                       });
+    // remaining_nodes这个vector的下标x与id值相等，即remaining_nodes[x].id=x
+    //std::cout << "remaining_nodes size = " << remaining_nodes.size() << std::endl;
+    //这里的remaining_nodes.size还是等于number_of_nodes, 为128362
 
     bool use_cached_node_priorities = !node_levels.empty();
     if (use_cached_node_priorities)
@@ -229,22 +283,44 @@ void GraphContractor::Run(double core_factor)
                           });
         log << "ok";
     }
+
     BOOST_ASSERT(node_priorities.size() == number_of_nodes);
 
     util::Log() << "preprocessing " << number_of_nodes << " nodes ...";
 
     util::UnbufferedLog log;
     util::Percent p(log, number_of_nodes);
+    //std::cout << "origin size = " << orig_node_id_from_new_node_id_map.size() << std::endl;
+    //此时，orig_node_id_from_new_node_id_map的size还是0，在FlushDataAndRebuildContractorGraph才将空间分配得和remaining_nodes相同
+
+    /*for (const auto i : util::irange<std::size_t>(0, 10))
+    {
+        std::cout << "idx = " << i << ", remain_id = " << orig_node_id_from_new_node_id_map[i].id << std::endl;
+    }*/
 
     unsigned current_level = 0;
     bool flushed_contractor = false;
+    //int iter_num = 0;
+    //std::cout << "core_factor = " << core_factor << std::endl;  core_factor = 1
+    // number_of_nodes * core_factor = 128362
+    // number_of_nodes * 0.65 * core_factor = 83435.3
+
+    //jhljx comment: The following loop will not execute the if(!flushed contractor) immediately
+    // 由于是并行计算的，所以number_of_contracted_nodes的值到while循环的每次判断时相差会很大，程序输出结果为
+    // 0（第一次），13687（第二次），23937（第三次），31842，38536，44092，48945....
     while (remaining_nodes.size() > 1 &&
            number_of_contracted_nodes < static_cast<NodeID>(number_of_nodes * core_factor))
     {
+        /*if (iter_num <= 10){
+            std::cout << "number_of_contracted_nodes = " << number_of_contracted_nodes << std::endl;
+            iter_num ++;
+        }*/
         if (!flushed_contractor && (number_of_contracted_nodes >
                                     static_cast<NodeID>(number_of_nodes * 0.65 * core_factor)))
         {
             log << " [flush " << number_of_contracted_nodes << " nodes] ";
+
+
 
             FlushDataAndRebuildContractorGraph(thread_data_list, remaining_nodes, node_priorities);
 

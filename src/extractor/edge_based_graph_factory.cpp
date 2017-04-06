@@ -27,6 +27,10 @@
 #include <string>
 #include <unordered_map>
 
+#include <unistd.h>  // linux access
+#include <sys/types.h>  //linux mkdir
+#include <sys/stat.h>  // linux mkdir
+
 namespace osrm
 {
 namespace extractor
@@ -419,6 +423,9 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
             // From the flags alone, we cannot determine which nodes are connected to `b` by an
             // outgoing
             // edge. Therefore, we have to search all connected edges for edges entering `b`
+
+            //jhljx comment: I need to print the edge_based_edge data information
+
             for (const EdgeID outgoing_edge :
                  m_node_based_graph->GetAdjacentEdgeRange(node_at_center_of_intersection))
             {
@@ -564,6 +571,8 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
                         boost::numeric_cast<EdgeWeight>(edge_data1.weight + weight_penalty);
                     auto duration =
                         boost::numeric_cast<EdgeWeight>(edge_data1.duration + duration_penalty);
+                    //std::cout << "edge_based_edge Yes" << std::endl;
+                    
                     m_edge_based_edge_list.emplace_back(edge_data1.edge_id,
                                                         edge_data2.edge_id,
                                                         turn_id,
@@ -663,6 +672,7 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
                     }
                 }
             }
+            fclose(out_file);
         }
     }
 

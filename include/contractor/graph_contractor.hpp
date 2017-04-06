@@ -111,6 +111,8 @@ class GraphContractor
         log << "Getting edges of minimized graph ";
         util::Percent p(log, contractor_graph->GetNumberOfNodes());
         const NodeID number_of_nodes = contractor_graph->GetNumberOfNodes();
+        //std::cout << "number_of_nodes = " << number_of_nodes << std::endl;
+        //此时contractor_graph的number_of_nodes变成了43973,变成了压缩后的图
         if (contractor_graph->GetNumberOfNodes())
         {
             Edge new_edge;
@@ -141,7 +143,7 @@ class GraphContractor
                         // tranlate the _node id_ of the shortcutted node
                         new_edge.data.id = orig_node_id_from_new_node_id_map[data.id];
                     }
-                    else
+                    else  //未收缩
                     {
                         new_edge.data.id = data.id;
                     }

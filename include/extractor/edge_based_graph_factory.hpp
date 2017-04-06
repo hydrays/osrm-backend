@@ -141,6 +141,7 @@ class EdgeBasedGraphFactory
                                           const EdgeID e2,
                                           const NodeID w,
                                           const double angle) const;
+  util::DeallocatingVector<EdgeBasedEdge> m_edge_based_edge_list;
 
   private:
     using EdgeData = util::NodeBasedDynamicGraph::EdgeData;
@@ -155,7 +156,7 @@ class EdgeBasedGraphFactory
 
     //! list of edge based nodes (compressed segments)
     std::vector<EdgeBasedNode> m_edge_based_node_list;
-    util::DeallocatingVector<EdgeBasedEdge> m_edge_based_edge_list;
+    //util::DeallocatingVector<EdgeBasedEdge> m_edge_based_edge_list;
     EdgeID m_max_edge_id;
 
     const std::vector<QueryNode> &m_node_info_list;
