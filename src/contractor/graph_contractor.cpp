@@ -36,7 +36,8 @@ GraphContractor::GraphContractor(int nodes,
         forward_edge.data.forward = reverse_edge.data.backward = true;
         forward_edge.data.backward = reverse_edge.data.forward = false;
         forward_edge.data.shortcut = reverse_edge.data.shortcut = false;
-        forward_edge.data.id = reverse_edge.data.id = id;
+        forward_edge.data.id = reverse_edge.data.id = id;  
+        //这里的edge_id于extractor/edge_based_graph_factory.cpp中的m_edge_based_edge_list中的edge_id相同
         forward_edge.data.originalEdges = reverse_edge.data.originalEdges = 1;
         forward_edge.data.weight = reverse_edge.data.weight = INVALID_EDGE_WEIGHT;
         forward_edge.data.duration = reverse_edge.data.duration = MAXIMAL_EDGE_DURATION;

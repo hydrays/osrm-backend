@@ -30,6 +30,7 @@ std::vector<ContractorEdge> adaptToContractorInput(InputEdgeContainer input_edge
                                   << static_cast<unsigned int>(input_edge.target);
         }
 #endif
+        //下面的这个调用的是ContractorEdgeData, original_edges被赋值为了1
         edges.emplace_back(input_edge.source,
                            input_edge.target,
                            std::max(input_edge.weight, 1),

@@ -30,8 +30,8 @@ struct ContractorEdgeData
     }
     EdgeWeight weight;
     EdgeWeight duration;
-    unsigned id;
-    unsigned originalEdges : 28;
+    unsigned id; //这个id对应了extractor中edge_based_edge的edge_id,赋值操作在graph_contractor_adoptors.hpp中
+    unsigned originalEdges : 28;  
     bool shortcut : 1;
     bool forward : 1;
     bool backward : 1;

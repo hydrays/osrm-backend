@@ -427,7 +427,10 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
 
                 const auto incoming_edge = m_node_based_graph->FindEdge(
                     node_along_road_entering, node_at_center_of_intersection);
-
+                // incoming_edge表示反向边的edge_id
+                // Node-based graph中的edge是单向边还是双向边？ 通过graph compress过程得到的双向边会合并成一条边
+                // 下面这个地方之所以需要continue，我觉得应该是将一个路段看成edge_based_graph的一个节点，防止重复
+                // 而node_based_edge_counter记录的正好是edge_based_graph中的node数量
                 if (m_node_based_graph->GetEdgeData(incoming_edge).reversed)
                     continue;
 
