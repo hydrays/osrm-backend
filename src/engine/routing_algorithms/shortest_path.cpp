@@ -234,6 +234,72 @@ shortestPathSearchImpl(SearchEngineData &engine_working_data,
                        const std::vector<PhantomNodes> &phantom_nodes_vector,
                        const boost::optional<bool> continue_straight_at_waypoint)
 {
+    std::vector<int> id_list={45818,79831,45808,45811,131057,131070,9810,45747,188306,188315,9813,9814,45638,129398,9824,
+        45632,9825,26660,26658,45566,92383,129408,129411,129413,9828,129435,129441,9829,129442,31886,9835,9836,9837,129452,
+        9838,157485,43080,101676,101674,45526,45510,131245,45539,105577,105574,105596,120381,157489,120366,146484,105615,
+        156540,146363,146395,156602,146454,146462,201164,43084,201741,45465,201045,132790};
+    
+    std::cout << facade.GetNumberOfNodes() << std::endl;  //128362个节点
+    std::cout << facade.GetNumberOfEdges() << std::endl;  //695972条边
+
+    for (int i = 0; i < id_list.size(); i++) {
+        auto edge_data = facade.GetEdgeData(id_list[i]);
+        std::cout << edge_data.id << std::endl;
+        std::cout << facade.GetTarget(id_list[i]) << std::endl;
+        std::cout << "------------------" << std::endl;
+    }
+
+    std::vector<int> node_id_list = {8164,21546,8327,8327,22475,55410,48780,8143,6758,32509,48772,64945,7978,22200,16085,28681,
+        16090,59684,17868,8220,29166,22217,22219,22217,16085,22231,22218,16089,22237,5791,16089,52178,56948,22240,16085,2879,
+        49144,17491,17467,8318,8288,22524,7999,21802,49278,19910,20825,69905,59545,25354,18165,27049,21792,104702,2646,25358,
+        21836,35320,49148,35432,29148,34303,61908};
+
+    std::vector<int> via_node_list = {31971,31972,31973,31974,52387,31975,31976,31977,31978,31979,31980,31960,31961,31962,31963,
+        31964,7427,7428,7429,7433,99480,99486,99490,7434,15392,99658,23028,99667,7435,7436,99673,99677,23011,7437,7438,7439,7448,
+        31840,7449,174745,174747,148975,7450,52989,7451,149013,7452,7453,7459,7460,7461,7462,7463,7464,7465,31748,96330,7466,7485,
+        96415,7486,31744,7487,18812,18810,31699,96493,7490,60624,96496,96498,96504,7491,96626,96647,7492,96661,7498,7499,20644};
+
+    /*for(int i = 0; i < node_id_list.size()-1; i++)
+    {
+        int source = node_id_list[i];
+        std::cout << source << std::endl;
+        bool flag = false;
+        auto edge_range = facade.GetAdjacentEdgeRange(source);
+
+        for(auto current_edge : edge_range)
+        {
+            const NodeID target = facade.GetTarget(current_edge);
+            if (target == node_id_list[i+1])
+            {
+                flag = true;
+                break;
+            }
+        }
+
+        if(!flag)
+        {
+            source = node_id_list[i+1];
+            auto edge_range = facade.GetAdjacentEdgeRange(source);
+            for(auto current_edge : edge_range)
+            {
+                const NodeID target = facade.GetTarget(current_edge);
+                if (target == node_id_list[i])
+                {
+                    flag = true;
+                    break;
+                }
+            }
+        }
+        if(!flag)
+        {
+            std::cout << "Not connected!" << std::endl;
+        }else
+        {
+            std::cout << "Connected!" << std::endl;
+        }
+    }*/
+
+
     InternalRouteResult raw_route_data;
     raw_route_data.segment_end_coordinates = phantom_nodes_vector;
     const bool allow_uturn_at_waypoint =

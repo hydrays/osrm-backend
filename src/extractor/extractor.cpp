@@ -294,6 +294,28 @@ int Extractor::run(ScriptingEnvironment &scripting_environment)
         util::Log() << "Writing node map ...";
         WriteNodeMapping(internal_to_external_node_map);
 
+        FILE * out_file;
+        std::string out_file_dir = "out/";
+        std::string out_data_file = out_file_dir + "edge_based_edge_info.txt";
+
+        if (access(out_file_dir.c_str(), 0) == -1)  
+        {
+            int flag = -1;  
+            flag = mkdir(out_file_dir.c_str(), 0777);  
+            if (flag == 0)  
+            {  
+                std::cout<<"make successfully"<<std::endl;  
+            } else {  
+                std::cout<<"make errorly"<<std::endl;  
+            }
+        }
+
+        out_file = fopen(out_data_file.c_str(), "w");
+        for(auto edge : edge_based_edge_list){
+            fprintf(out_file, "%d, %d, %d\n", edge.source, edge.target, edge.edge_id);
+        }
+        fclose(out_file);
+
         WriteEdgeBasedGraph(config.edge_graph_output_path, max_edge_id, edge_based_edge_list);
 
         const auto nodes_per_second =
@@ -486,28 +508,6 @@ Extractor::BuildEdgeExpandedGraph(ScriptingEnvironment &scripting_environment,
                                  config.turn_penalties_index_path,
                                  config.cnbg_ebg_graph_mapping_output_path,
                                  config.generate_edge_lookup);
-
-    FILE * out_file;
-    std::string out_file_dir = "out/";
-    std::string out_data_file = out_file_dir + "edge_based_edge_info.txt";
-
-    if (access(out_file_dir.c_str(), 0) == -1)  
-    {
-        int flag = -1;  
-        flag = mkdir(out_file_dir.c_str(), 0777);  
-        if (flag == 0)  
-        {  
-            std::cout<<"make successfully"<<std::endl;  
-        } else {  
-            std::cout<<"make errorly"<<std::endl;  
-        }
-    }
-
-    out_file = fopen(out_data_file.c_str(), "w");
-    for(auto edge : edge_based_graph_factory.m_edge_based_edge_list){
-        fprintf(out_file, "%d, %d\n", edge.source, edge.target, edge.edge_id);
-    }
-    fclose(out_file);
 
     // The osrm-partition tool requires the compressed node based graph with an embedding.
     //

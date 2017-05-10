@@ -100,6 +100,7 @@ int main(int argc, const char *argv[]) //try
 
 	// Handling datafiles
 	std::string day_string(argv[2]);
+    std::cout << "day = " << day_string << std::endl; 
 
 	//total output file
 	FILE * mpoints_output;
@@ -166,7 +167,7 @@ int main(int argc, const char *argv[]) //try
         params.data_file_name = in_data_file_name_part;
         num ++;
         std::cout << "File name is " << in_data_file_name_part << std::endl; 
-        if (num == 3) 
+        if (num == 2) 
         {
             break;
         }
@@ -315,7 +316,7 @@ int main(int argc, const char *argv[]) //try
             if (status == Status::Ok)
             {
                 const auto code = result.values.at("code").get<json::String>().value;
-                std::cout << " code: " << code << "\n";
+                //std::cout << " code: " << code << "\n";
                 //std::cout << "result: " << result << "\n";
                 const auto &tracepoints = result.values.at("tracepoints").get<json::Array>().values;
                 const auto &matchings = result.values.at("matchings").get<json::Array>().values;
@@ -343,13 +344,13 @@ int main(int argc, const char *argv[]) //try
                     .get<json::Array>()
                     .values;
 
-                    std::cout << "the size of geometries_coordinates is " << geometries_coordinates.size() << std::endl;
+                    //std::cout << "the size of geometries_coordinates is " << geometries_coordinates.size() << std::endl;
 
                     for (const auto &json_coordinate : geometries_coordinates)
                     {
                         lon = json_coordinate.get<json::Array>().values[0].get<osrm::json::Number>().value;
                         lat = json_coordinate.get<json::Array>().values[1].get<osrm::json::Number>().value;
-                        std::cout << lon << ", " << lat << std::endl;
+                        //std::cout << lon << ", " << lat << std::endl;
 
                         /////////////////////////////////
                         // *********  DEBUG ********** //
@@ -359,7 +360,7 @@ int main(int argc, const char *argv[]) //try
                             fprintf(geometry_full_output, "%lf %lf \n", lon, lat);
                         }
                     }
-                    std::cout << std::endl;
+                    //std::cout << std::endl;
                     const auto &distance = matching_route
                     .get<json::Object>()
                     .values.at("distance").get<osrm::json::Number>().value;
@@ -428,15 +429,15 @@ int main(int argc, const char *argv[]) //try
                         //   .get<json::Array>()
                         //   .values;
 
-                        std::cout << " Matched_id: " << matchings_index
-                        << "-Waypoint_id: " << waypoint_index
-                        << "-" << waypoint_name << "\n";
+                        //std::cout << " Matched_id: " << matchings_index << "-Waypoint_id: " << waypoint_index << "-" << waypoint_name << "\n";
 
                         const auto &waypoint_location =
                         waypoint_object.values.at("location").get<json::Array>().values;
                         lon = waypoint_location[0].get<json::Number>().value;
                         lat = waypoint_location[1].get<json::Number>().value;
-                        std::cout << "trace coord:" << lon << ", " << lat << std::endl;
+                        
+                        //std::cout << "trace coord:" << lon << ", " << lat << std::endl;
+
                         /////////////////////////////////
                         // *********  DEBUG ********** //
                         /////////////////////////////////
@@ -501,7 +502,7 @@ int main(int argc, const char *argv[]) //try
                     }
                     else
                     {
-                      std::cout << " unMatched. \n";
+                      //std::cout << " unMatched. \n";
                       //getchar();
                     }
                     nm = nm + 1;

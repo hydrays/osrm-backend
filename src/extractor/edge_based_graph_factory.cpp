@@ -672,7 +672,6 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
                     }
                 }
             }
-            fclose(out_file);
         }
     }
 

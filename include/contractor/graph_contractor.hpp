@@ -113,8 +113,14 @@ class GraphContractor
         const NodeID number_of_nodes = contractor_graph->GetNumberOfNodes();
         //std::cout << "number_of_nodes = " << number_of_nodes << std::endl;
         //此时contractor_graph的number_of_nodes变成了43973,变成了压缩后的图
+
         if (contractor_graph->GetNumberOfNodes())
         {
+            FILE * out_file;
+            std::string out_file_dir = "out/";
+            std::string out_data_file = out_file_dir + "contracted_edges.txt";
+            out_file = fopen(out_data_file.c_str(), "w");
+
             Edge new_edge;
             for (const auto node : util::irange(0u, number_of_nodes))
             {
@@ -138,6 +144,10 @@ class GraphContractor
                     new_edge.data.weight = data.weight;
                     new_edge.data.duration = data.duration;
                     new_edge.data.shortcut = data.shortcut;
+
+                    fprintf(out_file, "%d, %d, %d\n", node, target, data.id);
+                    //对已经收缩的shortcut边进行处理，这里之所以可以把data.id放到origin_node_id_from_new_node_id_map中
+                    //是因为在insert_edges插入edge的时候，data.id为shortcut的edge_based_node id
                     if (!data.is_original_via_node_ID && !orig_node_id_from_new_node_id_map.empty())
                     {
                         // tranlate the _node id_ of the shortcutted node
@@ -154,6 +164,7 @@ class GraphContractor
                     edges.push_back(new_edge);
                 }
             }
+            fclose(out_file);
         }
         contractor_graph.reset();
         orig_node_id_from_new_node_id_map.clear();

@@ -21,6 +21,33 @@ GraphContractor::GraphContractor(int nodes,
     : node_levels(std::move(node_levels_)), node_weights(std::move(node_weights_))
 {
     tbb::parallel_sort(edges.begin(), edges.end());
+
+    //此处传入的edges的条数是原始edge_based_graph的edge个数的2倍，将一条edge分为两条
+
+    FILE * out_file;
+    std::string out_file_dir = "out/";
+    std::string out_data_file = out_file_dir + "contract_edge_info.txt";
+
+    //std::cout << "hello origin edge " << edges.size() << std::endl;
+
+    if (access(out_file_dir.c_str(), 0) == -1)  
+    {
+        int flag = -1;  
+        flag = mkdir(out_file_dir.c_str(), 0777);  
+        if (flag == 0)  
+        {  
+            std::cout<<"make successfully"<<std::endl;  
+        } else {  
+            std::cout<<"make errorly"<<std::endl;  
+        }
+    }
+
+    out_file = fopen(out_data_file.c_str(), "w");
+    for(auto edge : edges){
+        fprintf(out_file, "%d, %d, %d\n", edge.source, edge.target, edge.data.id);
+    }
+    fclose(out_file);
+
     NodeID edge = 0;
     for (NodeID i = 0; i < edges.size();)
     {
@@ -83,8 +110,15 @@ GraphContractor::GraphContractor(int nodes,
             }
         }
     }
+
+    
+
     util::Log() << "merged " << edges.size() - edge << " edges out of " << edges.size();
     edges.resize(edge);
+
+    //origin edges size = 499258, current edges size = 498912
+
+    //std::cout << "hello later edge " << edges.size() << std::endl;
     contractor_graph = std::make_shared<ContractorGraph>(nodes, edges);
     edges.clear();
     edges.shrink_to_fit();
@@ -140,7 +174,7 @@ void GraphContractor::FlushDataAndRebuildContractorGraph(
         }*/
 
         new_node_id_from_orig_id_map[node.id] = new_node_id;
-        node.id = new_node_id;
+        node.id = new_node_id;  // 这里再次把remaining_nodes的id值变成remaining_nodes[new_node_id].id=new_node_id
     }
     // walk over all nodes
     for (const auto source : util::irange<NodeID>(0UL, contractor_graph->GetNumberOfNodes()))
@@ -342,10 +376,12 @@ void GraphContractor::Run(double core_factor)
             });
 
         // sort all remaining nodes to the beginning of the sequence
+        //将独立集节点放到remaining_nodes数组末尾
         const auto begin_independent_nodes =
             stable_partition(remaining_nodes.begin(),
                              remaining_nodes.end(),
                              [](RemainingNodeData node_data) { return !node_data.is_independent; });
+        // begin_independent_nodes_idx是remaining_nodes中独立集节点的开始位置
         auto begin_independent_nodes_idx =
             std::distance(remaining_nodes.begin(), begin_independent_nodes);
         auto end_independent_nodes_idx = remaining_nodes.size();

@@ -298,19 +298,17 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
             // want the first->middle to get visited before middle->second
             recursion_stack.emplace(middle_node_id, edge.second);
             recursion_stack.emplace(edge.first, middle_node_id);
-        }
+        } 
         else
         {
             // We found an original edge, call our callback.
             std::forward<Callback>(callback)(edge, data);
         }
 
-        /*std::cout << "----------------------------------------------------" << std::endl;
-        std::cout << "edge_based_node id: " << data.id << std::endl;
-        for (auto current_edge : facade.GetAdjacentEdgeRange(data.id))
+        /*for (auto current_edge : facade.GetAdjacentEdgeRange(data.id))
         {
-
         }*/
+
 
     }
 }
@@ -489,7 +487,7 @@ void unpackPath(const FacadeT &facade,
         unpacked_path.push_back(PathData{
             id_vector[start_index < end_index ? segment_idx + 1 : segment_idx - 1],
             phantom_node_pair.target_phantom.name_id,
-            phantom_node_pair.target_phantom.packed_geometry_id,  //注意次序一定要和internal_route_result.cpp中的PathData中变量顺序一致
+            1111111111,
             weight_vector[segment_idx],
             duration_vector[segment_idx],
             extractor::guidance::TurnInstruction::NO_TURN(),
@@ -501,6 +499,9 @@ void unpackPath(const FacadeT &facade,
             util::guidance::TurnBearing(0),
             util::guidance::TurnBearing(0)});
     }
+
+    //这个先注释掉PathData的第三个参数
+    //phantom_node_pair.target_phantom.packed_geometry_id,  //注意次序一定要和internal_route_result.cpp中的PathData中变量顺序一致
 
     if (unpacked_path.size() > 0)
     {

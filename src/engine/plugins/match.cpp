@@ -236,10 +236,9 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
         // bi-directional
         // phantom nodes for possible uturns
         
-
         sub_routes[index] = algorithms.ShortestPathSearch(sub_routes[index].segment_end_coordinates, {false});
-
         //sub_routes[index] = algorithms.TrafficPrediction(sub_routes[index].segment_end_coordinates, {false});
+
 
         auto &raw_route_data = sub_routes[index]; 
         
@@ -287,7 +286,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           getchar();
         }
 
-        fprintf(out_data_file,"-1,0,0,0,0,0,0 \n");
+        fprintf(out_data_file,"-1,0,0,0,0,0,0,0 \n");
 
         auto prev_point_index = sub_matchings[index].indices[0];
         auto start_time_rec = parameters.timestamps[prev_point_index];
@@ -325,6 +324,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           std::vector<int> time_calc;  // this time is based the proportion of distance to divide the time from car data
           std::vector<int> edge_id_list; 
           std::vector<int> name_list;
+          std::vector<int> via_node_list;
 
           //std::cout << "start_time_rec: " << start_time_rec << ", end_time_rec: " << end_time_rec << std::endl;
           //std::cout << "start_time_cal: " << start_time_cal << ", end_time_cal: " << end_time_cal << std::endl;
@@ -340,6 +340,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
               path_distances.push_back(current_distance);
               time_record.push_back(eta);
               edge_id_list.push_back(path_point.edge_id);
+              via_node_list.push_back(path_point.turn_via_node);
               name_list.push_back(path_point.name_id);
 
               tmp_sum_distance += current_distance;
@@ -349,7 +350,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
                   " eta: " << eta <<
                   " current distance: " << current_distance << "\n";  */    
           }
-          //std::cout << "-------------------" << std::endl;
+          
 
           
 
@@ -357,11 +358,12 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           {
             end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
             end_time_rec = start_time_rec + time_record[i];
-            fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%f \n", start_time_cal, end_time_cal, 
-              start_time_rec, end_time_rec,edge_id_list[i],name_list[i],path_distances[i]);
+            fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%d,%f \n", start_time_cal, end_time_cal, 
+              start_time_rec, end_time_rec,edge_id_list[i],via_node_list[i],name_list[i],path_distances[i]);
             start_time_rec = end_time_rec;
             start_time_cal = end_time_cal;
           }
+          fprintf(out_data_file, "------------------ \n");
 
           current_distance =
           util::coordinate_calculation::haversineDistance(prev_coordinate, phantoms.target_phantom.location);
