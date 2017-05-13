@@ -370,6 +370,9 @@ int Contractor::Run()
     std::vector<extractor::EdgeBasedEdge> edge_based_edge_list;
 
     EdgeID max_edge_id = LoadEdgeExpandedGraph(config, edge_based_edge_list, node_weights);
+    //std::cout << max_edge_id << std::endl;
+    //std::cout << edge_based_edge_list.size() << std::endl;
+    //这个地方max_edge_id的值是128361，edge_based_edge_list的size大小为249629
 
 #if !defined(NDEBUG)
     if (config.turn_penalty_lookup_paths.empty())
@@ -818,6 +821,8 @@ Contractor::LoadEdgeExpandedGraph(const ContractorConfig &config,
     auto edge_segment_byte_ptr = reinterpret_cast<const char *>(edge_segment_region.get_address());
 
     bool fallback_to_duration = true;
+    //std::cout << "graph header: num of edges = " << graph_header.number_of_edges << std::endl;
+    //这里number_of_edges的值和edge_based_edge_list的size大小相同，都是249629
     for (std::uint64_t edge_index = 0; edge_index < graph_header.number_of_edges; ++edge_index)
     {
         // Make a copy of the data from the memory map
@@ -982,7 +987,9 @@ Contractor::WriteContractedGraph(unsigned max_node_id,
     // Sorting contracted edges in a way that the static query graph can read some in in-place.
     tbb::parallel_sort(contracted_edge_list.begin(), contracted_edge_list.end());
     const std::uint64_t contracted_edge_count = contracted_edge_list.size();
+
     util::Log() << "Serializing compacted graph of " << contracted_edge_count << " edges";
+    //这里写入的contracted_edge_count的大小为695972，这个count的值和最后query_graph中的edge个数一样
 
     const util::FingerPrint fingerprint = util::FingerPrint::GetValid();
     boost::filesystem::ofstream hsgr_output_stream(config.graph_output_path, std::ios::binary);

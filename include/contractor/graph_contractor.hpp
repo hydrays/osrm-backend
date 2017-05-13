@@ -172,6 +172,9 @@ class GraphContractor
 
         BOOST_ASSERT(0 == orig_node_id_from_new_node_id_map.capacity());
 
+        //std::cout << "number of edges: " << edges.size() << std::endl;
+        // 在这个地方，edges的size为374677
+
         edges.append(external_edge_list.begin(), external_edge_list.end());
         external_edge_list.clear();
     }

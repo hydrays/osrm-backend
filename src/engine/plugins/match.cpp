@@ -145,8 +145,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
 
     if (!time_increases_monotonically)
     {
-        return Error(
-            "InvalidValue", "Timestamps need to be monotonically increasing.", json_result);
+        return Error("InvalidValue", "Timestamps need to be monotonically increasing.", json_result);
     }
 
     // assuming radius is the standard deviation of a normal distribution

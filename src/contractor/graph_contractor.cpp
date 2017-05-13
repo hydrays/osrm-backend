@@ -28,7 +28,7 @@ GraphContractor::GraphContractor(int nodes,
     std::string out_file_dir = "out/";
     std::string out_data_file = out_file_dir + "contract_edge_info.txt";
 
-    //std::cout << "hello origin edge " << edges.size() << std::endl;
+    //std::cout << "hello origin edge " << edges.size() << std::endl;  size = 499258
 
     if (access(out_file_dir.c_str(), 0) == -1)  
     {
@@ -177,6 +177,7 @@ void GraphContractor::FlushDataAndRebuildContractorGraph(
         node.id = new_node_id;  // 这里再次把remaining_nodes的id值变成remaining_nodes[new_node_id].id=new_node_id
     }
     // walk over all nodes
+    // 这里graph的node个数仍然是128362
     for (const auto source : util::irange<NodeID>(0UL, contractor_graph->GetNumberOfNodes()))
     {
         for (auto current_edge : contractor_graph->GetAdjacentEdgeRange(source))
@@ -536,7 +537,7 @@ void GraphContractor::Run(double core_factor)
 
     util::Log() << "[core] " << remaining_nodes.size() << " nodes "
                 << contractor_graph->GetNumberOfEdges() << " edges.";
-
+    //这里GetNumberOfEdges得到的结果是374678
     thread_data_list.data.clear();
 }
 

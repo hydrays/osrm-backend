@@ -302,7 +302,7 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
         else
         {
             // We found an original edge, call our callback.
-            std::forward<Callback>(callback)(edge, data);
+            std::forward<Callback>(callback)(edge, data, smaller_edge_id);
         }
 
         /*for (auto current_edge : facade.GetAdjacentEdgeRange(data.id))
@@ -344,7 +344,8 @@ void unpackPath(const FacadeT &facade,
          &phantom_node_pair,
          &start_traversed_in_reverse,
          &target_traversed_in_reverse](std::pair<NodeID, NodeID> & /* edge */,
-                                       const auto &edge_data) {
+                                       const auto &edge_data,
+                                       const EdgeID small_edge_id) {
 
             BOOST_ASSERT_MSG(!edge_data.shortcut, "original edge flagged as shortcut");
             const auto name_index = facade.GetNameIndexFromEdgeID(edge_data.id);
@@ -395,7 +396,7 @@ void unpackPath(const FacadeT &facade,
             {
                 unpacked_path.push_back(PathData{id_vector[segment_idx + 1],
                                                  name_index,
-                                                 edge_data.id,
+                                                 small_edge_id,
                                                  weight_vector[segment_idx],
                                                  duration_vector[segment_idx],
                                                  extractor::guidance::TurnInstruction::NO_TURN(),
