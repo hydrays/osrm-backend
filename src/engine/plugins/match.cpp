@@ -201,7 +201,8 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
     }
 
     std::vector<InternalRouteResult> sub_routes(sub_matchings.size());
-    for (auto index : util::irange<std::size_t>(0UL, sub_matchings.size()))
+    //这个地方为了让一次出行数据只有一个输出，所以下面的for循环只循环第一个元素，而不是循环0到sub_matchings.size()
+    for (auto index : util::irange<std::size_t>(0UL, 1))
     {
         BOOST_ASSERT(sub_matchings[index].nodes.size() > 1);
 
@@ -285,10 +286,15 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           getchar();
         }
 
-        fprintf(out_data_file,"-1,0,0,0,0,0,0,0 \n");
+        fprintf(out_data_file,"-1,0,0,0,0,\n");
 
         auto prev_point_index = sub_matchings[index].indices[0];
-        auto start_time_rec = parameters.timestamps[prev_point_index];
+        auto pre_time_rec = parameters.timestamps[prev_point_index];
+        auto pre_time_cal = parameters.timestamps[prev_point_index];
+
+        int start_time_rec = pre_time_rec, start_time_cal = pre_time_cal, end_time_rec = 0, end_time_cal = 0;
+
+        int origin_edge_id = -1;
 
         for (auto idx : util::irange<std::size_t>(0UL, number_of_legs))
         {
@@ -299,9 +305,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           const auto next_point_index = sub_matchings[index].indices[idx + 1];
           const auto data_time_interval = parameters.timestamps[next_point_index] - parameters.timestamps[prev_point_index];
           
-          auto start_time_cal = parameters.timestamps[prev_point_index];
-          auto end_time_rec = 0;
-          auto end_time_cal = 0;
+
           //                          u       *      v
           //                          0 -- 1 -- 2 -- 3
           // fwd_segment_position:  1
@@ -350,19 +354,30 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
                   " current distance: " << current_distance << "\n";  */    
           }
           
-
           
-
           for (unsigned i = 0; i < path_distances.size(); i++)
           {
-            end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            /*end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
             end_time_rec = start_time_rec + time_record[i];
-            fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%d,%f \n", start_time_cal, end_time_cal, 
-              start_time_rec, end_time_rec,edge_id_list[i],via_node_list[i],name_list[i],path_distances[i]);
+            fprintf(out_data_file,"%d,%d,%d,%d,%d,\n", start_time_cal, end_time_cal, 
+              start_time_rec, end_time_rec,edge_id_list[i]);
             start_time_rec = end_time_rec;
-            start_time_cal = end_time_cal;
+            start_time_cal = end_time_cal;*/
+            if(edge_id_list[i] != origin_edge_id){
+              if(origin_edge_id != 1111111111 && origin_edge_id != -1){
+                fprintf(out_data_file,"%d,%d,%d,%d,%d,\n", start_time_cal, end_time_cal, start_time_rec, end_time_rec,origin_edge_id);
+                start_time_rec = end_time_rec;
+                start_time_cal = end_time_cal;
+              }
+              origin_edge_id = edge_id_list[i];
+            }
+            end_time_cal = pre_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            end_time_rec = pre_time_rec + time_record[i];
+            pre_time_cal = end_time_cal;
+            pre_time_rec = end_time_rec;
           }
-          fprintf(out_data_file, "------------------ \n");
+            
+          //fprintf(out_data_file, "------------------\n");
 
           current_distance =
           util::coordinate_calculation::haversineDistance(prev_coordinate, phantoms.target_phantom.location);
