@@ -209,7 +209,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
         // FIXME we only run this to obtain the geometry
         // The clean way would be to get this directly from the map matching plugin
         PhantomNodes current_phantom_node_pair;
-        std::cout << "sub_matchings nodes size = " << sub_matchings[index].nodes.size() << std::endl;
+        //std::cout << "sub_matchings nodes size = " << sub_matchings[index].nodes.size() << std::endl;
 
         /*for (unsigned i = 0; i < sub_matchings[index].nodes.size(); ++i) 
         {
@@ -243,12 +243,13 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
         auto &raw_route_data = sub_routes[index]; 
         
         auto number_of_routes = raw_route_data.has_alternative() ? 2UL : 1UL;
-        std::cout << "number of routes is " << number_of_routes << "\n";
+        //std::cout << "number of routes is " << number_of_routes << "\n";
     
         auto number_of_legs = raw_route_data.segment_end_coordinates.size();
         std::cout << "number of legs is " << number_of_legs << "\n";
-    
+
         auto cumulative_distance = 0.;
+    
         std::cout << "parameters size = " << parameters.coordinates.size() << std::endl;
 
         /*for (auto idx : util::irange<std::size_t>(0LL, parameters.coordinates.size())) 
@@ -304,7 +305,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           prev_point_index = sub_matchings[index].indices[idx];
           const auto next_point_index = sub_matchings[index].indices[idx + 1];
           const auto data_time_interval = parameters.timestamps[next_point_index] - parameters.timestamps[prev_point_index];
-          
+          //std::cout << "pre = " << prev_point_index << ",now = " << next_point_index <<",next_time = " << parameters.timestamps[next_point_index] << ", now_time = " << parameters.timestamps[prev_point_index] << std::endl;
 
           //                          u       *      v
           //                          0 -- 1 -- 2 -- 3
@@ -347,6 +348,10 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
               name_list.push_back(path_point.name_id);
 
               tmp_sum_distance += current_distance;
+              /*if (current_distance == 0){
+                std::cout << "coordinate 1 = " << prev_coordinate.lon << "," << prev_coordinate.lat << "; coordinate 2 = "
+                << coordinate.lon << "," << coordinate.lat << std::endl; 
+              }*/
               prev_coordinate = coordinate;
               /*std::cout << "edge id: " << path_point.edge_id <<
                   " name: " << path_point.name_id <<
@@ -354,7 +359,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
                   " current distance: " << current_distance << "\n";  */    
           }
           
-          
+          //fprintf(out_data_file, "--------------------------\n");
           for (unsigned i = 0; i < path_distances.size(); i++)
           {
             /*end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
@@ -365,13 +370,22 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
             start_time_cal = end_time_cal;*/
             if(edge_id_list[i] != origin_edge_id){
               if(origin_edge_id != 1111111111 && origin_edge_id != -1){
+                BOOST_ASSERT(start_time_cal >= 0);
                 fprintf(out_data_file,"%d,%d,%d,%d,%d,\n", start_time_cal, end_time_cal, start_time_rec, end_time_rec,origin_edge_id);
                 start_time_rec = end_time_rec;
                 start_time_cal = end_time_cal;
               }
               origin_edge_id = edge_id_list[i];
             }
-            end_time_cal = pre_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            if (abs(path_distances[i]) < 1e-5){
+              end_time_cal = pre_time_cal;
+            }else{
+              end_time_cal = pre_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            }
+            
+            /*if (end_time_cal == -2147442995){
+              std::cout << "YES " << pre_time_cal << " " << path_distances[i] << " " << tmp_sum_distance << " " << data_time_interval << std::endl;
+            }*/
             end_time_rec = pre_time_rec + time_record[i];
             pre_time_cal = end_time_cal;
             pre_time_rec = end_time_rec;

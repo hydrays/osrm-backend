@@ -289,6 +289,63 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
         BOOST_ASSERT_MSG(data.weight != std::numeric_limits<EdgeWeight>::max(),
                          "edge weight invalid");
 
+         /* output edge_data.id to e mapping */
+
+        /*
+        std::cout << "beging e to id mapping...\n";
+        FILE *fp;
+        fp = fopen("e_to_eid_mapping.txt", "w");
+        if ( fp == NULL )
+        {
+            std::cout << "file open error\n";
+            getchar();
+        }
+        for ( int e=0; e<facade.GetNumberOfEdges(); e++ )
+        {
+            const auto &data = facade.GetEdgeData(e);
+            int source = 0;
+            if (data.forward)
+            {
+                for ( int node_id=0; node_id<facade.GetNumberOfNodes(); node_id++ )
+                {
+                    if ( facade.FindSmallestEdge(
+                             node_id, facade.GetTarget(e), [](const auto &data) { return data.forward; }) == e )
+                    {
+                        std::cout << e << " source node found! \n";
+                        source = node_id;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                source = facade.GetTarget(e);
+            }
+            auto degree = facade.GetOutDegree(source);
+            auto edge_range = facade.GetAdjacentEdgeRange(source);
+            int n_intersection = 0;
+            for(auto current_edge : edge_range)
+            {
+                const auto edge_data2 = facade.GetEdgeData(current_edge);
+                if (!edge_data2.shortcut)
+                {
+                    n_intersection += 1;
+                }
+            }
+            if ( !data.shortcut && data.weight != std::numeric_limits<EdgeWeight>::max())
+            {
+                const auto geometry_index = facade.GetGeometryIndexForEdgeID(data.id);
+                fprintf(fp, "%d, %d, %d, %d, %d, %d, %d, %d\n",
+                        e, data.id, edge.first, edge.second,
+                        data.forward, data.backward,
+                        degree, n_intersection);
+            }
+        }
+        fclose(fp);
+        std::cout << "end e to id mapping...\n";
+        exit(1);
+        */
+
         // If the edge is a shortcut, we need to add the two halfs to the stack.
         if (data.shortcut)
         { // unpack

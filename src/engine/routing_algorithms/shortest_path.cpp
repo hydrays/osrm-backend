@@ -234,7 +234,7 @@ shortestPathSearchImpl(SearchEngineData &engine_working_data,
                        const std::vector<PhantomNodes> &phantom_nodes_vector,
                        const boost::optional<bool> continue_straight_at_waypoint)
 {
-    std::vector<int> id_list={135874,229177,135754,135752,369949,369950,29686,29685,528425,528426,29711,29710,135238,365451,29737,
+    /*std::vector<int> id_list={135874,229177,135754,135752,369949,369950,29686,29685,528425,528426,29711,29710,135238,365451,29737,
         29736,29739,79397,79398,79394,135072,365468,365493,365494,29744,29745,365567,29748,29749,94844,29762,29761,29765,29766,29767,
         29768,127972,127971,288969,134962,134961,370384,135020,135018,299396,299398,340993,340995,441930,413438,413437,439543,439545,
         413238,413241,413378,413377,413392,127980,566964,566965,564903,374437};
@@ -242,6 +242,7 @@ shortestPathSearchImpl(SearchEngineData &engine_working_data,
     std::cout << facade.GetNumberOfNodes() << std::endl;  //128362个节点
     std::cout << facade.GetNumberOfEdges() << std::endl;  //695972条边
 
+    */
     /*for (int i = 0; i < id_list.size(); i++) {
         auto edge_data = facade.GetEdgeData(id_list[i]);
         std::cout << edge_data.id << std::endl;
@@ -249,7 +250,7 @@ shortestPathSearchImpl(SearchEngineData &engine_working_data,
         std::cout << "------------------" << std::endl;
     }*/
     
-    std::vector<int> node_id_list = {23360,23360,40614,23354,23354,68883,68883,23322,23322,97944,97944,5264,5264,23262,67886,23258,
+    /*std::vector<int> node_id_list = {23360,23360,40614,23354,23354,68883,68883,23322,23322,97944,97944,5264,5264,23262,67886,23258,
         23258,5275,13873,23223,47019,47019,67894,67899,67899,67915,67920,67920,67921,67921,16311,5286,5286,67928,67928,82559,82559,
         52330,52329,52329,23195,23195,68986,54505,54505,54515,54515,82562,62847,62847,54526,54526,76637,76637,82085,82085,76690,104175,
         104175,21944,23174,23174,104116};
@@ -296,8 +297,7 @@ shortestPathSearchImpl(SearchEngineData &engine_working_data,
         {
             std::cout << "Connected!" << std::endl;
         }
-    }
-
+    }*/
 
     InternalRouteResult raw_route_data;
     raw_route_data.segment_end_coordinates = phantom_nodes_vector;

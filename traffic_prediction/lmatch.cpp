@@ -279,7 +279,7 @@ int main(int argc, const char *argv[]) //try
                 fclose(GPS_records);
             }
 
-            std::cout << "Loaded Path: " << path_id << " with length: " << path_length << std::endl;
+            //std::cout << "Loaded Path: " << path_id << " with length: " << path_length << std::endl;
             //<< " ( Input file: " << in_data_file_name << ")"
             //<< std::endl;
 
@@ -322,7 +322,7 @@ int main(int argc, const char *argv[]) //try
                 const auto &matchings = result.values.at("matchings").get<json::Array>().values;
                 const auto &number_of_matchings = matchings.size();
 
-                std::cout << "number of matching is " << number_of_matchings << std::endl;
+                //std::cout << "number of matching is " << number_of_matchings << std::endl;
 
                 // const auto &route_legs = matchings[0]
                 //   .get<json::Object>()
@@ -371,9 +371,9 @@ int main(int argc, const char *argv[]) //try
                     .get<json::Object>()
                     .values.at("weight").get<osrm::json::Number>().value;
 
-                    std::cout << "route distance is " << distance << std::endl;
-                    std::cout << "route duration is " << duration << std::endl;
-                    std::cout << "route weight is " << weight << std::endl;
+                    //std::cout << "route distance is " << distance << std::endl;
+                    //std::cout << "route duration is " << duration << std::endl;
+                    //std::cout << "route weight is " << weight << std::endl;
                     
                     const auto &route_legs = matching_route
                     .get<json::Object>()
@@ -381,7 +381,7 @@ int main(int argc, const char *argv[]) //try
                     .get<json::Array>()
                     .values;
 
-                    std::cout << "the route legs' size is " << route_legs.size() << std::endl; 
+                    //std::cout << "the route legs' size is " << route_legs.size() << std::endl; 
 
                     for (const auto &route_leg : route_legs) 
                     {
@@ -407,7 +407,7 @@ int main(int argc, const char *argv[]) //try
 
                 }
                 nm = 0;
-                std:: cout << "trace point size = " << tracepoints.size() << std:: endl;
+                //std:: cout << "trace point size = " << tracepoints.size() << std:: endl;
                 for (const auto &waypoint : tracepoints)
                 {
                     if (waypoint.is<mapbox::util::recursive_wrapper<util::json::Object>>())

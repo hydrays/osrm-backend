@@ -37,7 +37,7 @@ class MatchAPI final : public RouteAPI
 
         for (auto index : util::irange<std::size_t>(0UL, sub_matchings.size()))
         {
-            std::cout << "In Match api the sub_matching size is: " << sub_matchings[index].indices.size() << std::endl;
+            //std::cout << "In Match api the sub_matching size is: " << sub_matchings[index].indices.size() << std::endl;
             auto route = MakeRoute(sub_routes[index].segment_end_coordinates,
                                    sub_routes[index].unpacked_path_segments,
                                    sub_routes[index].source_traversed_in_reverse,
