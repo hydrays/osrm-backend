@@ -246,11 +246,11 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
         //std::cout << "number of routes is " << number_of_routes << "\n";
     
         auto number_of_legs = raw_route_data.segment_end_coordinates.size();
-        std::cout << "number of legs is " << number_of_legs << "\n";
+        //std::cout << "number of legs is " << number_of_legs << "\n";
 
         auto cumulative_distance = 0.;
     
-        std::cout << "parameters size = " << parameters.coordinates.size() << std::endl;
+        //std::cout << "parameters size = " << parameters.coordinates.size() << std::endl;
 
         /*for (auto idx : util::irange<std::size_t>(0LL, parameters.coordinates.size())) 
         {
@@ -362,12 +362,17 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           //fprintf(out_data_file, "--------------------------\n");
           for (unsigned i = 0; i < path_distances.size(); i++)
           {
-            /*end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            /*if(idx > 0 && i == 0)
+              end_time_cal = parameters.timestamps[prev_point_index] + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            else
+              end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
             end_time_rec = start_time_rec + time_record[i];
             fprintf(out_data_file,"%d,%d,%d,%d,%d,\n", start_time_cal, end_time_cal, 
               start_time_rec, end_time_rec,edge_id_list[i]);
             start_time_rec = end_time_rec;
-            start_time_cal = end_time_cal;*/
+            start_time_cal = end_time_cal; */
+            
+
             if(edge_id_list[i] != origin_edge_id){
               if(origin_edge_id != 1111111111 && origin_edge_id != -1){
                 BOOST_ASSERT(start_time_cal >= 0);
@@ -380,15 +385,22 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
             if (abs(path_distances[i]) < 1e-5){
               end_time_cal = pre_time_cal;
             }else{
-              end_time_cal = pre_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+              if(i == 0)
+                end_time_cal = parameters.timestamps[prev_point_index] + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+              else
+                end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
             }
-            
-            /*if (end_time_cal == -2147442995){
-              std::cout << "YES " << pre_time_cal << " " << path_distances[i] << " " << tmp_sum_distance << " " << data_time_interval << std::endl;
-            }*/
+
             end_time_rec = pre_time_rec + time_record[i];
             pre_time_cal = end_time_cal;
             pre_time_rec = end_time_rec;
+            
+            
+            //end_time_cal = pre_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            /*if (end_time_cal == -2147442995){
+              std::cout << "YES " << pre_time_cal << " " << path_distances[i] << " " << tmp_sum_distance << " " << data_time_interval << std::endl;
+            }*/
+            
           }
             
           //fprintf(out_data_file, "------------------\n");
