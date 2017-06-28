@@ -289,6 +289,59 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
         BOOST_ASSERT_MSG(data.weight != std::numeric_limits<EdgeWeight>::max(),
                          "edge weight invalid");
 
+        // output edge_id and (node_from_id, node_to_id) mapping file 
+        std::cout << "beging e_id (n_from_id,n_to_id) mapping...\n";
+        FILE *fp;
+        fp = fopen("e_to_node_id_mapping.txt", "w");
+        if ( fp == NULL )
+        {
+            std::cout << "file open error\n";
+            getchar();
+        }
+        for ( int e=0; e<facade.GetNumberOfEdges(); e++ )
+        {
+            const auto &data = facade.GetEdgeData(e);
+            int source = -1, target = -1;
+
+            if (data.forward)
+            {
+                for ( int node_id=0; node_id<facade.GetNumberOfNodes(); node_id++ )
+                {
+                    if ( facade.FindSmallestEdge(
+                            node_id, facade.GetTarget(e), [](const auto &data) { return data.forward; }) == e )
+                    {
+                        std::cout << e << " source node found! \n";
+                        source = node_id;
+                        break;
+                    }
+                }
+                target = facade.GetTarget(e);
+            }
+            else
+            {
+                for ( int node_id=0; node_id<facade.GetNumberOfNodes(); node_id++ )
+                {
+                    if ( facade.FindSmallestEdge(
+                            node_id, facade.GetTarget(e), [](const auto &data) { return data.backward; }) == e )
+                    {
+                        std::cout << e << " source node found! \n";
+                        target = node_id;
+                        break;
+                    }
+                }
+                source = facade.GetTarget(e);
+            }
+            if ( !data.shortcut && data.weight != std::numeric_limits<EdgeWeight>::max())
+            {
+                fprintf(fp, "%d, %d, %d %d\n", e, source, target, data.forward);  // source表示起始node,target表示末尾node
+            }
+        }
+        fclose(fp);
+        std::cout << "end e to id mapping...\n";
+        exit(1);
+
+
+
          /* output edge_data.id to e mapping */
 
         /*
