@@ -290,7 +290,7 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
                          "edge weight invalid");
 
         // output edge_id and (node_from_id, node_to_id) mapping file 
-        std::cout << "beging e_id (n_from_id,n_to_id) mapping...\n";
+        /*std::cout << "beging e_id (n_from_id,n_to_id) mapping...\n";
         FILE *fp;
         fp = fopen("e_to_node_id_mapping.txt", "w");
         if ( fp == NULL )
@@ -333,12 +333,12 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
             }
             if ( !data.shortcut && data.weight != std::numeric_limits<EdgeWeight>::max())
             {
-                fprintf(fp, "%d, %d, %d %d\n", e, source, target, data.forward);  // source表示起始node,target表示末尾node
+                fprintf(fp, "%d, %d, %d, %d\n", e, source, target, data.forward);  // source表示起始node,target表示末尾node
             }
         }
         fclose(fp);
         std::cout << "end e to id mapping...\n";
-        exit(1);
+        exit(1);*/
 
 
 

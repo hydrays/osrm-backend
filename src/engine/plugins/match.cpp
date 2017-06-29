@@ -18,6 +18,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
+
 
 #include <unistd.h>  // linux access
 #include <sys/types.h>  //linux mkdir
@@ -200,6 +202,22 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
         return Error("NoMatch", "Could not match the trace.", json_result);
     }
 
+
+    // 这个地方从edge_node_mapping文件中读取映射存储到哈希表中
+    std::string edge_node_list_name = "e_to_node_id_mapping.txt";
+    FILE * edge_node_list = fopen (edge_node_list_name.c_str(), "r");
+    if ( edge_node_list == NULL ){
+      std::cout << "open edge_node_list error" << edge_node_list_name << std::endl;
+      getchar();
+    }
+
+    std::unordered_map<int, std::tuple<NodeID,NodeID,int> > edge_node_mapping_list;
+    int e_id = 0, from_node_id = 0, to_node_id = 0, e_direction = 0;
+    while(fscanf(edge_node_list, "%d,%d,%d,%d", &e_id, &from_node_id, &to_node_id, &e_direction)!=EOF)
+    {
+      edge_node_mapping_list.insert({e_id, std::make_tuple(from_node_id,to_node_id,e_direction)});
+    }
+
     std::vector<InternalRouteResult> sub_routes(sub_matchings.size());
     //这个地方为了让一次出行数据只有一个输出，所以下面的for循环只循环第一个元素，而不是循环0到sub_matchings.size()
     for (auto index : util::irange<std::size_t>(0UL, 1))
@@ -242,7 +260,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
 
         auto &raw_route_data = sub_routes[index]; 
         
-        auto number_of_routes = raw_route_data.has_alternative() ? 2UL : 1UL;
+        //auto number_of_routes = raw_route_data.has_alternative() ? 2UL : 1UL;
         //std::cout << "number of routes is " << number_of_routes << "\n";
     
         auto number_of_legs = raw_route_data.segment_end_coordinates.size();
@@ -287,7 +305,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           getchar();
         }
 
-        fprintf(out_data_file,"-1,0,0,0,0,\n");
+        fprintf(out_data_file,"-1,0,0,0,0,0,0,0,0,\n");
 
         auto prev_point_index = sub_matchings[index].indices[0];
         auto pre_time_rec = parameters.timestamps[prev_point_index];
@@ -372,11 +390,14 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
             start_time_rec = end_time_rec;
             start_time_cal = end_time_cal; */
             
-
+            //将输出文件中相同的edge_id的部分合并到一起
             if(edge_id_list[i] != origin_edge_id){
               if(origin_edge_id != 1111111111 && origin_edge_id != -1){
                 BOOST_ASSERT(start_time_cal >= 0);
-                fprintf(out_data_file,"%d,%d,%d,%d,%d,\n", start_time_cal, end_time_cal, start_time_rec, end_time_rec,origin_edge_id);
+                std::unordered_map<int, std::tuple<NodeID,NodeID,int>>::const_iterator info_idx =  edge_node_mapping_list.find(origin_edge_id);
+                std::tuple<NodeID,NodeID,int> edge_info = info_idx->second;
+                fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%d,%d,%d,\n", start_time_cal, end_time_cal, start_time_rec, end_time_rec,origin_edge_id,
+                  std::get<0>(edge_info),std::get<1>(edge_info),std::get<2>(edge_info),name_list[i]);
                 start_time_rec = end_time_rec;
                 start_time_cal = end_time_cal;
               }
