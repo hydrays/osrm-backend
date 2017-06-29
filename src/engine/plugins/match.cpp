@@ -217,6 +217,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
     {
       edge_node_mapping_list.insert({e_id, std::make_tuple(from_node_id,to_node_id,e_direction)});
     }
+    fclose(edge_node_list);
 
     std::vector<InternalRouteResult> sub_routes(sub_matchings.size());
     //这个地方为了让一次出行数据只有一个输出，所以下面的for循环只循环第一个元素，而不是循环0到sub_matchings.size()
