@@ -207,7 +207,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
     std::string edge_node_list_name = "e_to_node_id_mapping.txt";
     FILE * edge_node_list = fopen (edge_node_list_name.c_str(), "r");
     if ( edge_node_list == NULL ){
-      std::cout << "open edge_node_list error" << edge_node_list_name << std::endl;
+      std::cout << "open edge_node_list error " << edge_node_list_name << std::endl;
       getchar();
     }
 
@@ -306,7 +306,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           getchar();
         }
 
-        fprintf(out_data_file,"-1,0,0,0,0,0,0,0,0,\n");
+        // fprintf(out_data_file,"-1,0,0,0,0,0,0,0,0,\n");
 
         auto prev_point_index = sub_matchings[index].indices[0];
         auto pre_time_rec = parameters.timestamps[prev_point_index];
@@ -315,6 +315,8 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
         int start_time_rec = pre_time_rec, start_time_cal = pre_time_cal, end_time_rec = 0, end_time_cal = 0;
 
         int origin_edge_id = -1;
+        double partial_distance = 0.0;
+        double pre_end_time_cal = 0.0;
 
         for (auto idx : util::irange<std::size_t>(0UL, number_of_legs))
         {
@@ -379,6 +381,11 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           }
           
           //fprintf(out_data_file, "--------------------------\n");
+          //printf("----------------------------\n");
+
+
+          
+          //printf("aaaa origin_edge_id =%d  idx=%d path = %d\n",origin_edge_id,idx,path_distances.size());
           for (unsigned i = 0; i < path_distances.size(); i++)
           {
             /*if(idx > 0 && i == 0)
@@ -386,36 +393,59 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
             else
               end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
             end_time_rec = start_time_rec + time_record[i];
-            fprintf(out_data_file,"%d,%d,%d,%d,%d,\n", start_time_cal, end_time_cal, 
-              start_time_rec, end_time_rec,edge_id_list[i]);
+
+            partial_distance += path_distances[i];
+            fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%.6f,%.6f,\n", start_time_cal, end_time_cal, 
+              start_time_rec, end_time_rec,edge_id_list[i],name_list[i],partial_distance, path_distances[i]);
             start_time_rec = end_time_rec;
             start_time_cal = end_time_cal; */
+
+
             
             //将输出文件中相同的edge_id的部分合并到一起
+            //如果当前的edge_id和目前记录的edge_id不同，则输出上一个edge_id的所有信息
+            // phantom node 即edge_id为111111111的时间会被算到它接下来的那个edge_id上。
+
             if(edge_id_list[i] != origin_edge_id){
               if(origin_edge_id != 1111111111 && origin_edge_id != -1){
                 BOOST_ASSERT(start_time_cal >= 0);
+                //printf("i=%d, origin_edge_id=%d\n",i,origin_edge_id);
                 std::unordered_map<int, std::tuple<NodeID,NodeID,int>>::const_iterator info_idx =  edge_node_mapping_list.find(origin_edge_id);
                 std::tuple<NodeID,NodeID,int> edge_info = info_idx->second;
-                fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%d,%d,%d,\n", start_time_cal, end_time_cal, start_time_rec, end_time_rec,origin_edge_id,
-                  std::get<0>(edge_info),std::get<1>(edge_info),std::get<2>(edge_info),name_list[i]);
+
+                double speed_calc = -11111111111;
+                if (abs(partial_distance)<1e-5) {
+                  speed_calc = 0;
+                }else if (end_time_cal - start_time_cal > 0) {
+                  speed_calc = partial_distance / (end_time_cal - start_time_cal);
+                }
+
+                fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,\n", start_time_cal, end_time_cal, origin_edge_id, std::get<0>(edge_info),std::get<1>(edge_info),std::get<2>(edge_info),name_list[i],partial_distance, speed_calc);
+
+                //fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,\n", start_time_cal, end_time_cal, start_time_rec, end_time_rec,origin_edge_id,
+                  //std::get<0>(edge_info),std::get<1>(edge_info),std::get<2>(edge_info),name_list[i],partial_distance, speed_calc);
                 start_time_rec = end_time_rec;
                 start_time_cal = end_time_cal;
+                partial_distance = 0.0;
               }
               origin_edge_id = edge_id_list[i];
             }
             if (abs(path_distances[i]) < 1e-5){
               end_time_cal = pre_time_cal;
-            }else{
-              if(i == 0)
-                end_time_cal = parameters.timestamps[prev_point_index] + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
-              else
-                end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
-            }
 
+            }else{
+              if(i == 0){
+                end_time_cal = parameters.timestamps[prev_point_index] + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+              }
+              else
+                end_time_cal = pre_end_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            }
+            pre_end_time_cal = end_time_cal;
+            //printf("start_time_cal = %d, end_time_cal = %d\n", start_time_cal, end_time_cal);
             end_time_rec = pre_time_rec + time_record[i];
+            partial_distance += path_distances[i];
             pre_time_cal = end_time_cal;
-            pre_time_rec = end_time_rec;
+            pre_time_rec = end_time_rec; 
             
             
             //end_time_cal = pre_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
@@ -423,6 +453,32 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
               std::cout << "YES " << pre_time_cal << " " << path_distances[i] << " " << tmp_sum_distance << " " << data_time_interval << std::endl;
             }*/
             
+          }
+          
+          if (path_distances.size() > 0) {
+            unsigned eid_idx = path_distances.size() -1;
+            if(origin_edge_id != 1111111111 && origin_edge_id != -1){
+              BOOST_ASSERT(start_time_cal >= 0);
+              std::unordered_map<int, std::tuple<NodeID,NodeID,int>>::const_iterator info_idx =  edge_node_mapping_list.find(origin_edge_id);
+              std::tuple<NodeID,NodeID,int> edge_info = info_idx->second;
+
+              double speed_calc = -11111111111;
+              //printf("partial_distance = %.6f\n",partial_distance);
+              if(abs(partial_distance)<1e-5) {
+                speed_calc = 0;
+              }else if (end_time_cal - start_time_cal > 0) {
+                speed_calc = partial_distance / (end_time_cal - start_time_cal);
+              }
+
+              fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,\n", start_time_cal, end_time_cal, origin_edge_id, std::get<0>(edge_info),std::get<1>(edge_info),std::get<2>(edge_info),name_list[eid_idx],partial_distance, speed_calc);
+
+              //fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,\n", start_time_cal, end_time_cal, start_time_rec, end_time_rec,origin_edge_id,
+                //std::get<0>(edge_info),std::get<1>(edge_info),std::get<2>(edge_info),name_list[eid_idx],partial_distance, speed_calc);
+              start_time_rec = end_time_rec;
+              start_time_cal = end_time_cal;
+              partial_distance = 0.0;
+            }
+            origin_edge_id = -1;
           }
             
           //fprintf(out_data_file, "------------------\n");
