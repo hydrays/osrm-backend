@@ -213,7 +213,8 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
 
     std::unordered_map<int, std::tuple<NodeID,NodeID,int> > edge_node_mapping_list;
     int e_id = 0, from_node_id = 0, to_node_id = 0, e_direction = 0;
-    while(fscanf(edge_node_list, "%d,%d,%d,%d", &e_id, &from_node_id, &to_node_id, &e_direction)!=EOF)
+    double edge_distance = 0.0;
+    while(fscanf(edge_node_list, "%d,%d,%d,%d,%lf", &e_id, &from_node_id, &to_node_id, &e_direction, &edge_distance)!=EOF)
     {
       edge_node_mapping_list.insert({e_id, std::make_tuple(from_node_id,to_node_id,e_direction)});
     }

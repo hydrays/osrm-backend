@@ -333,7 +333,31 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
             }
             if ( !data.shortcut && data.weight != std::numeric_limits<EdgeWeight>::max())
             {
-                fprintf(fp, "%d, %d, %d, %d\n", e, source, target, data.forward);  // source表示起始node,target表示末尾node
+                const auto geometry_index = facade.GetGeometryIndexForEdgeID(data.id);
+                //std::cout << "id = " << geometry_index.id << std::endl;
+                std::vector<NodeID> id_vector;
+            
+                if (geometry_index.forward)
+                {
+                    id_vector = facade.GetUncompressedForwardGeometry(geometry_index.id);
+                }
+                else
+                {
+                    id_vector = facade.GetUncompressedReverseGeometry(geometry_index.id);
+                }
+
+                //BOOST_ASSERT(id_vector.size() >= 2);
+                double sum_distance = 0.0;
+                if(id_vector.size() >= 2)
+                {
+                    for (std::size_t segment_idx = 0; segment_idx < id_vector.size() -1; ++segment_idx)
+                    {
+                        auto prev_coordinate = facade.GetCoordinateOfNode(id_vector[segment_idx]);
+                        auto coordinate = facade.GetCoordinateOfNode(id_vector[segment_idx + 1]);
+                        sum_distance += util::coordinate_calculation::haversineDistance(prev_coordinate, coordinate);
+                    }
+                }
+                fprintf(fp, "%d, %d, %d, %d, %.6f,\n", e, source, target, data.forward, sum_distance);  // source表示起始node,target表示末尾node
             }
         }
         fclose(fp);
