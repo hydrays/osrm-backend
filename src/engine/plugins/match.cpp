@@ -203,23 +203,6 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
     }
 
 
-    // 这个地方从edge_node_mapping文件中读取映射存储到哈希表中
-    std::string edge_node_list_name = "e_to_node_id_mapping.txt";
-    FILE * edge_node_list = fopen (edge_node_list_name.c_str(), "r");
-    if ( edge_node_list == NULL ){
-      std::cout << "open edge_node_list error " << edge_node_list_name << std::endl;
-      getchar();
-    }
-
-    std::unordered_map<int, std::tuple<NodeID,NodeID,int> > edge_node_mapping_list;
-    int e_id = 0, from_node_id = 0, to_node_id = 0, e_direction = 0;
-    double edge_distance = 0.0;
-    while(fscanf(edge_node_list, "%d,%d,%d,%d,%lf", &e_id, &from_node_id, &to_node_id, &e_direction, &edge_distance)!=EOF)
-    {
-      edge_node_mapping_list.insert({e_id, std::make_tuple(from_node_id,to_node_id,e_direction)});
-    }
-    fclose(edge_node_list);
-
     std::vector<InternalRouteResult> sub_routes(sub_matchings.size());
     //这个地方为了让一次出行数据只有一个输出，所以下面的for循环只循环第一个元素，而不是循环0到sub_matchings.size()
     for (auto index : util::irange<std::size_t>(0UL, 1))

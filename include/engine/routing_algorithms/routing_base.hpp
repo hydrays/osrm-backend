@@ -292,7 +292,9 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
         // output edge_id and (node_from_id, node_to_id) mapping file 
         /*std::cout << "beging e_id (n_from_id,n_to_id) mapping...\n";
         FILE *fp;
-        fp = fopen("e_to_node_id_mapping.txt", "w");
+        //fp = fopen("e_to_node_id_mapping.txt", "w");
+        fp = fopen("e_to_node_id_mapping_new.txt", "w");
+        //fp = fopen("e_node_id.txt", "w");
         if ( fp == NULL )
         {
             std::cout << "file open error\n";
@@ -354,10 +356,51 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
                     {
                         auto prev_coordinate = facade.GetCoordinateOfNode(id_vector[segment_idx]);
                         auto coordinate = facade.GetCoordinateOfNode(id_vector[segment_idx + 1]);
+
+                        
+                        double source_lng = -111111, source_lat = -111111, target_lng = -111111, target_lat = -111111;
+                        constexpr const double COORDINATE_PRECISION = 1e6;
+                        auto tmp_coordinate = static_cast<std::int32_t>(prev_coordinate.lon);
+                        source_lng = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
+                        tmp_coordinate = static_cast<std::int32_t>(prev_coordinate.lat);
+                        source_lat = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
+                        
+                        fprintf(fp, "%.6f, %.6f, ", source_lng, source_lat);
+                        if(segment_idx == id_vector.size() - 2)
+                        {
+                            tmp_coordinate = static_cast<std::int32_t>(coordinate.lon);
+                            target_lng = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
+                            tmp_coordinate = static_cast<std::int32_t>(coordinate.lat);
+                            target_lat = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
+                            fprintf(fp, "%.6f, %.6f, ", target_lng, target_lat);
+                        }
                         sum_distance += util::coordinate_calculation::haversineDistance(prev_coordinate, coordinate);
                     }
+                    //fprintf(fp, "\n");
                 }
-                fprintf(fp, "%d, %d, %d, %d, %.6f,\n", e, source, target, data.forward, sum_distance);  // source表示起始node,target表示末尾node
+
+
+                double source_lng = -111111, source_lat = -111111, target_lng = -111111, target_lat = -111111;
+                if(source != -1 && target != -1)  //避免target=-1导致下面获取坐标出错
+                {
+                    auto source_coordinate = facade.GetCoordinateOfNode(source);
+                    auto target_coordinate = facade.GetCoordinateOfNode(target);
+
+                    constexpr const double COORDINATE_PRECISION = 1e6;
+                    auto tmp_coordinate = static_cast<std::int32_t>(source_coordinate.lon);
+                    source_lng = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
+                    tmp_coordinate = static_cast<std::int32_t>(source_coordinate.lat);
+                    source_lat = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
+                    tmp_coordinate = static_cast<std::int32_t>(target_coordinate.lon);
+                    target_lng = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
+                    tmp_coordinate = static_cast<std::int32_t>(target_coordinate.lat);
+                    target_lat = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
+                }
+                
+                fprintf(fp, "%d, %d, %d, %d, %.6f, %.6f, %.6f, %.6f, %.6f\n", e, source, target, data.forward, sum_distance, 
+                              source_lng, source_lat, target_lng, target_lat);  // source表示起始node,target表示末尾node
+
+                //fprintf(fp, "%d, %d, %d, %d, %.6f\n", e, source, target, data.forward, sum_distance);  // source表示起始node,target表示末尾node
             }
         }
         fclose(fp);

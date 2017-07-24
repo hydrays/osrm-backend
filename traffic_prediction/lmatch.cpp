@@ -110,9 +110,12 @@ int main(int argc, const char *argv[]) //try
 	
 
 	//std::string base_data_path = "data/2013FebMarch/unLoadedRoutes/";
-	std::string base_data_path = "../../../data/LoadedRoutes/";
+	//std::string base_data_path = "../../../data/LoadedRoutes/";
+    std::string base_data_path = "/media/jhljx/Elements/Rsync/LoadedRoutes/";
 
     std::vector<std::string> date_string_vec = {"20130225","20130226","20130227","20130228","20130301","20130302","20130303"};
+
+    std::cout << "Hello world!" << std::endl;
 
     for(int date_idx = 0; date_idx < date_string_vec.size(); date_idx ++)
     {
