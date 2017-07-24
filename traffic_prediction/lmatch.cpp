@@ -548,12 +548,12 @@ int main(int argc, const char *argv[]) //try
         fclose(mpoints_output);
         //fclose (out_data_file);
         fclose (in_file_list);
-        free(geometry);
-        free(mpoints);
-        free(timestamps);
-        free(carpath);
+        
     }
-
+    free(geometry);
+    free(mpoints);
+    free(timestamps);
+    free(carpath);
     
 	return EXIT_SUCCESS;
 }
