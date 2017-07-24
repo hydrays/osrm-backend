@@ -48,7 +48,7 @@ struct MyCoordinate
 
 int main(int argc, const char *argv[]) //try
 {
-	if (argc < 3)
+	if (argc < 2)
 	{
 	  std::cerr << "Error: Not enough arguments." << std::endl
 		<< "Run " << argv[0] << " data.osrm" << std::endl;
@@ -119,8 +119,10 @@ int main(int argc, const char *argv[]) //try
         params.data_file_dir = date_string_vec[date_idx];
         std::string day_string = params.data_file_dir;
         std::string data_path = base_data_path + day_string + "/";
-        // std::string data_path = "../../../data/2013FebMarch/LoadedRoutes/test/";
 
+        std::cout << "day = " << date_string_vec[date_idx] << std::endl;
+
+        // std::string data_path = "../../../data/2013FebMarch/LoadedRoutes/test/";
         FILE * mpoints_output;
         std::string mpoints_output_filename = "mpoints_output_" + day_string + ".txt";
         mpoints_output = fopen (mpoints_output_filename.c_str(), "w");
@@ -128,8 +130,10 @@ int main(int argc, const char *argv[]) //try
             std::cout << "open mpoints_output_file error" << std::endl;
             getchar();
         }
+        
 
         std::string in_file_list_name = data_path + "filelist.txt";
+        std::cout << in_file_list_name << std::endl;
         FILE * in_file_list;
         in_file_list = fopen (in_file_list_name.c_str(), "r");
         if ( in_file_list == NULL ){
@@ -179,9 +183,9 @@ int main(int argc, const char *argv[]) //try
                 getchar();
             }
             params.data_file_name = in_data_file_name_part;
-            /*num ++;
+            //num ++;
             std::cout << "File name is " << in_data_file_name_part << std::endl; 
-            if (num == 2) 
+            /*if (num == 2) 
             {
                 break;
             }*/
@@ -545,7 +549,7 @@ int main(int argc, const char *argv[]) //try
             //getchar();
             fclose (in_data_file);
         }
-        fclose(mpoints_output);
+        
         //fclose (out_data_file);
         fclose (in_file_list);
         
