@@ -382,7 +382,7 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
                             target_lat = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
                             //fprintf(fp, "%.6f, %.6f, ", target_lng, target_lat);
                             edge_target_lng = target_lng, edge_target_lat = target_lat;
-                            new_target = id_vector[segment_idx];
+                            new_target = id_vector[segment_idx + 1];
                         }
                         sum_distance += util::coordinate_calculation::haversineDistance(prev_coordinate, coordinate);
                     }
