@@ -67,6 +67,7 @@ inline void readHSGR(io::FileReader &input_file,
     BOOST_ASSERT(node_buffer);
     BOOST_ASSERT(edge_buffer);
     input_file.ReadInto(node_buffer, number_of_nodes);
+    //std::cout << "read 11111111111111111111111" << std::endl;
     input_file.ReadInto(edge_buffer, number_of_edges);
 }
 

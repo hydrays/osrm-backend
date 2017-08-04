@@ -40,6 +40,7 @@ OSRM::OSRM(engine::EngineConfig &config)
     {
     case EngineConfig::Algorithm::CH:
         engine_ = std::make_unique<engine::Engine<engine::algorithm::CH>>(config);
+        //程序运行时会执行这条语句
         break;
     case EngineConfig::Algorithm::CoreCH:
         engine_ = std::make_unique<engine::Engine<engine::algorithm::CoreCH>>(config);

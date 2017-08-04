@@ -62,7 +62,7 @@ class CompressedEdgeContainer
     int free_list_maximum = 0;
 
     void IncreaseFreeList();
-    std::vector<OnewayEdgeBucket> m_compressed_oneway_geometries;
+    std::vector<OnewayEdgeBucket> m_compressed_oneway_geometries;  //二维vector
     std::vector<unsigned> m_compressed_geometry_index;
     std::vector<NodeID> m_compressed_geometry_nodes;
     std::vector<EdgeWeight> m_compressed_geometry_fwd_weights;

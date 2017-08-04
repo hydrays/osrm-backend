@@ -36,12 +36,14 @@ template <typename EdgeDataT> struct EdgeArrayEntry;
 
 template <typename EdgeDataT> struct EdgeArrayEntry
 {
+    NodeID source;
     NodeID target;
     EdgeDataT data;
 };
 
 template <> struct EdgeArrayEntry<void>
 {
+    NodeID source;
     NodeID target;
 };
 
@@ -123,6 +125,7 @@ template <typename EdgeDataT, bool UseSharedMemory = false> class StaticGraph
             EdgeIterator e = node_array[node + 1].first_edge;
             for (const auto i : irange(node_array[node].first_edge, e))
             {
+                edge_array[i].source = node;
                 edge_array[i].target = graph[edge].target;
                 CopyDataIfAvailable(
                     edge_array[i], graph[edge], traits::HasDataMember<EdgeArrayEntry>{});

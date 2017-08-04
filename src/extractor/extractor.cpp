@@ -435,19 +435,19 @@ Extractor::LoadNodeBasedGraph(std::unordered_set<NodeID> &barriers,
 
     NodeID number_of_node_based_nodes = util::loadNodesFromFile(
         file_reader, barriers_iter, traffic_signals_iter, internal_to_external_node_map);
-
+    //util::Log() << " - " << number_of_node_based_nodes << " node_based_graph nodes";  总共190316个node_based_node
     util::Log() << " - " << barriers.size() << " bollard nodes, " << traffic_signals.size()
                 << " traffic lights";
 
     std::vector<NodeBasedEdge> edge_list;
-    util::loadEdgesFromFile(file_reader, edge_list);
-
+    util::loadEdgesFromFile(file_reader, edge_list); 
+    
     if (edge_list.empty())
     {
         throw util::exception("Node-based-graph (" + config.output_file_name +
                               ") contains no edges." + SOURCE_REF);
     }
-
+    //util::Log() << " - " << edge_list.size() << "Node-based-graph edges";  总共278802条node_based_edge
     return util::NodeBasedDynamicGraphFromEdges(number_of_node_based_nodes, edge_list);
 }
 
@@ -534,6 +534,30 @@ Extractor::BuildEdgeExpandedGraph(ScriptingEnvironment &scripting_environment,
 
     WriteTurnLaneData(config.turn_lane_descriptions_file_name);
     compressed_edge_container.SerializeInternalVector(config.geometry_output_path);
+
+    FILE * out_file;
+    std::string out_file_dir = "out/";
+    std::string out_data_file = out_file_dir + "node_based_graph_edges.txt";
+    out_file = fopen(out_data_file.c_str(), "w");
+    fprintf(out_file,"edge_id, source_id, target_id, is_foward, weight\n");
+    std::map<unsigned, std::tuple<NodeID,NodeID,bool,EdgeWeight> > node_based_list;
+    node_based_list.clear();
+    for(unsigned i = 0; i < node_based_graph->GetNumberOfNodes(); i++)
+    {
+        for (auto edge : node_based_graph->GetAdjacentEdgeRange(i))
+        {
+            auto edgeInfo = node_based_graph->GetEdge(edge);
+            node_based_list.insert({edge, std::make_tuple(edgeInfo.source, edgeInfo.target, !edgeInfo.data.reversed, edgeInfo.data.weight)});
+        }
+        
+    }
+    std::map<unsigned, std::tuple<NodeID,NodeID,bool,EdgeWeight> >::iterator it = node_based_list.begin();
+    for(; it != node_based_list.end(); it++)
+    {
+        std::tuple<NodeID,NodeID,bool,EdgeWeight> tmp_data = it->second;
+        fprintf(out_file, "%u, %d, %d, %d, %d\n", it->first, std::get<0>(tmp_data), std::get<1>(tmp_data), std::get<2>(tmp_data), std::get<3>(tmp_data));
+    }
+    fclose(out_file);
 
     edge_based_graph_factory.GetEdgeBasedEdges(edge_based_edge_list);
     edge_based_graph_factory.GetEdgeBasedNodes(node_based_edge_list);

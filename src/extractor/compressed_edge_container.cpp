@@ -260,6 +260,7 @@ void CompressedEdgeContainer::InitializeBothwayVector()
     m_compressed_geometry_rev_durations.reserve(m_compressed_oneway_geometries.size());
 }
 
+//参数是node_based_graph中的edge_id
 unsigned CompressedEdgeContainer::ZipEdges(const EdgeID f_edge_id, const EdgeID r_edge_id)
 {
     const auto &forward_bucket = GetBucketReference(f_edge_id);
@@ -329,6 +330,7 @@ void CompressedEdgeContainer::PrintStatistics() const
                 << (float)compressed_geometries / std::max((uint64_t)1, compressed_edges);
 }
 
+// 这里的参数edge_id是node_based_graph上的，在EdgeBasedGraphFactory::InsertEdgeBasedNode中调用该函数
 const CompressedEdgeContainer::OnewayEdgeBucket &
 CompressedEdgeContainer::GetBucketReference(const EdgeID edge_id) const
 {

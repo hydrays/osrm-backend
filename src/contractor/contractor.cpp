@@ -408,6 +408,7 @@ int Contractor::Run()
     util::Log() << "Contraction took " << TIMER_SEC(contraction) << " sec";
 
     std::size_t number_of_used_edges = WriteContractedGraph(max_edge_id, contracted_edge_list);
+
     WriteCoreNodeMarker(std::move(is_core_node));
     if (!config.use_cached_priority)
     {
@@ -990,6 +991,7 @@ Contractor::WriteContractedGraph(unsigned max_node_id,
 
     util::Log() << "Serializing compacted graph of " << contracted_edge_count << " edges";
     //这里写入的contracted_edge_count的大小为695972，这个count的值和最后query_graph中的edge个数一样
+    
 
     const util::FingerPrint fingerprint = util::FingerPrint::GetValid();
     boost::filesystem::ofstream hsgr_output_stream(config.graph_output_path, std::ios::binary);
@@ -1006,8 +1008,8 @@ Contractor::WriteContractedGraph(unsigned max_node_id,
         return tmp_max;
     }();
 
-    util::Log(logDEBUG) << "input graph has " << (max_node_id + 1) << " nodes";
-    util::Log(logDEBUG) << "contracted graph has " << (max_used_node_id + 1) << " nodes";
+    util::Log() << "input graph has " << (max_node_id + 1) << " nodes";   // 128362 nodes
+    util::Log() << "contracted graph has " << (max_used_node_id + 1) << " nodes";  // 128362 nodes
 
     std::vector<util::StaticGraph<EdgeData>::NodeArrayEntry> node_array;
     // make sure we have at least one sentinel
@@ -1063,6 +1065,12 @@ Contractor::WriteContractedGraph(unsigned max_node_id,
     std::size_t number_of_used_edges = 0;
 
     util::StaticGraph<EdgeData>::EdgeArrayEntry current_edge;
+    FILE * out_file;
+    std::string out_file_dir = "out/";
+    std::string out_data_file = out_file_dir + "contracted_edges.txt";
+    out_file = fopen(out_data_file.c_str(), "w");
+    fprintf(out_file,"edge_id, origin_edge_id, source_id, target_id, is_foward, is_shortcut, weight\n");
+
     for (const auto edge : util::irange<std::size_t>(0UL, contracted_edge_list.size()))
     {
         // some self-loops are required for oneway handling. Need to assertthat we only keep these
@@ -1070,8 +1078,12 @@ Contractor::WriteContractedGraph(unsigned max_node_id,
         // no eigen loops
         // BOOST_ASSERT(contracted_edge_list[edge].source != contracted_edge_list[edge].target ||
         // node_represents_oneway[contracted_edge_list[edge].source]);
+        
+        current_edge.source = contracted_edge_list[edge].source;
         current_edge.target = contracted_edge_list[edge].target;
         current_edge.data = contracted_edge_list[edge].data;
+        fprintf(out_file, "%d, %d, %d, %d, %d, %d, %d\n", edge, current_edge.data.id, current_edge.source, 
+            current_edge.target, current_edge.data.forward, current_edge.data.shortcut, current_edge.data.weight);
 
         // every target needs to be valid
         BOOST_ASSERT(current_edge.target <= max_used_node_id);
@@ -1089,12 +1101,13 @@ Contractor::WriteContractedGraph(unsigned max_node_id,
             throw util::exception("Edge weight is <= 0" + SOURCE_REF);
         }
 #endif
+        //std::cout << "size ============== " << sizeof(util::StaticGraph<EdgeData>::EdgeArrayEntry) << std::endl;
         hsgr_output_stream.write((char *)&current_edge,
                                  sizeof(util::StaticGraph<EdgeData>::EdgeArrayEntry));
 
         ++number_of_used_edges;
     }
-
+    fclose(out_file);
     return number_of_used_edges;
 }
 

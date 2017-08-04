@@ -289,57 +289,43 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
         BOOST_ASSERT_MSG(data.weight != std::numeric_limits<EdgeWeight>::max(),
                          "edge weight invalid");
 
+        /*
+        FILE *node_fp = fopen("node_based_graph_edges.txt", "r");
+        int edge_id = 0, source_id = 0, target_id = 0, is_foward = 0, weight = 0;
+        std::map<std::pair<int,int>,std::pair<int,int> > Mp;
+        Mp.clear();
+        while(fscanf(node_fp, "%d,%d,%d,%d,%d", &edge_id, &source_id, &target_id, &is_foward, &weight)!=EOF)
+        {
+            //std::cout << "record edge " << e_id << std::endl;
+            Mp.insert({std::make_pair(source_id,target_id), std::make_pair(edge_id,is_foward)});
+        }
+        fclose(node_fp);
         // output edge_id and (node_from_id, node_to_id) mapping file 
         std::cout << "beging e_id (n_from_id,n_to_id) mapping...\n";
         FILE *fp;
-        //fp = fopen("e_to_node_id_mapping.txt", "w");
-        fp = fopen("e_to_node_id_mapping_new.txt", "w");
-        //fp = fopen("e_node_id.txt", "w");
-        if ( fp == NULL )
+        fp = fopen("e_to_node_id_mapping.txt", "w");
+        //fp = fopen("e_to_node_id_mapping_old.txt", "w");
+        //fp = fopen("e_to_node_id_mapping_new.txt", "w");
+        
+        //fprintf(fp, "e_id, e_source_id, e_target_id, e_forward, distance, source_lng, source_lat, target_lng, target_lat, n_source_id, n_target_id, n_edge_id, n_forward\n");
+        
+        //std::cout << facade.FindEdge(2,9691) << std::endl;
+        //std::cout << facade.FindEdge(2,60) << std::endl;
+        // 这里实际facade的edge size是695972，但是有好多shortcuts，满足条件输出到文件中的edge就很少了
+        for (unsigned e=0; e<facade.GetNumberOfEdges(); e++ )
         {
-            std::cout << "file open error\n";
-            getchar();
-        }
-        for ( int e=0; e<facade.GetNumberOfEdges(); e++ )
-        {
-            const auto &data = facade.GetEdgeData(e);
-            int source = -1, target = -1;
-
-            if (data.forward)
-            {
-                for ( int node_id=0; node_id<facade.GetNumberOfNodes(); node_id++ )
-                {
-                    if ( facade.FindSmallestEdge(
-                            node_id, facade.GetTarget(e), [](const auto &data) { return data.forward; }) == e )
-                    {
-                        std::cout << e << " source node found! \n";
-                        source = node_id;
-                        break;
-                    }
-                }
-                target = facade.GetTarget(e);
-            }
-            else
-            {
-                for ( int node_id=0; node_id<facade.GetNumberOfNodes(); node_id++ )
-                {
-                    if ( facade.FindSmallestEdge(
-                            node_id, facade.GetTarget(e), [](const auto &data) { return data.backward; }) == e )
-                    {
-                        std::cout << e << " source node found! \n";
-                        target = node_id;
-                        break;
-                    }
-                }
-                source = facade.GetTarget(e);
-            }
+            
+            auto data = facade.GetEdgeData(e);  //这个data就是facade.GetEdge得到的EdgeArrayEntry的data成员
+            auto edge = facade.GetEdge(e);
+            int source = edge.source, target = edge.target, is_foward = edge.data.forward;
+            
             if ( !data.shortcut && data.weight != std::numeric_limits<EdgeWeight>::max())
             {
                 const auto geometry_index = facade.GetGeometryIndexForEdgeID(data.id);
                 //std::cout << "id = " << geometry_index.id << std::endl;
                 std::vector<NodeID> id_vector;
             
-                if (geometry_index.forward)
+                if (geometry_index.forward)  //这个forward应该不是node_based_edge的forward
                 {
                     id_vector = facade.GetUncompressedForwardGeometry(geometry_index.id);
                 }
@@ -372,7 +358,7 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
                             edge_source_lng = source_lng, edge_source_lat = source_lat;
                             new_source = id_vector[segment_idx];
                         }
-                        
+                        //fprintf(fp, "%d, ", id_vector[segment_idx]);
                         //fprintf(fp, "%.6f, %.6f, ", source_lng, source_lat);
                         if(segment_idx == id_vector.size() - 2)
                         {
@@ -380,42 +366,34 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
                             target_lng = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
                             tmp_coordinate = static_cast<std::int32_t>(coordinate.lat);
                             target_lat = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
+                            //fprintf(fp, "%d\n", id_vector[segment_idx + 1]);
                             //fprintf(fp, "%.6f, %.6f, ", target_lng, target_lat);
                             edge_target_lng = target_lng, edge_target_lat = target_lat;
-                            new_target = id_vector[segment_idx];
+                            new_target = id_vector[segment_idx + 1];
                         }
                         sum_distance += util::coordinate_calculation::haversineDistance(prev_coordinate, coordinate);
                     }
                     //fprintf(fp, "\n");
                 }
-
-
                 
-                /*if(source != -1 && target != -1)  //避免target=-1导致下面获取坐标出错
+                int origin_node_edge_id = -1, n_is_forward = -1;
+                std::map<std::pair<int,int>, std::pair<int,int> >::iterator it = Mp.find(std::make_pair(new_source, new_target));
+                if(it != Mp.end())
                 {
-                    auto source_coordinate = facade.GetCoordinateOfNode(source);
-                    auto target_coordinate = facade.GetCoordinateOfNode(target);
+                    std::pair<int,int> mpValue = it->second;
+                    origin_node_edge_id = mpValue.first;
+                    n_is_forward = mpValue.second;
+                }
+                //fprintf(fp, "%d, %d, %d, %d, %.6f, %.6f, %.6f, %.6f, %.6f, %d, %d, %d, %d\n", e, source, target, data.forward, sum_distance, 
+                    //edge_source_lng, edge_source_lat, edge_target_lng, edge_target_lat, new_source, new_target, origin_node_edge_id, n_is_forward);  
+                // source表示起始node,target表示末尾node
 
-                    constexpr const double COORDINATE_PRECISION = 1e6;
-                    auto tmp_coordinate = static_cast<std::int32_t>(source_coordinate.lon);
-                    source_lng = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
-                    tmp_coordinate = static_cast<std::int32_t>(source_coordinate.lat);
-                    source_lat = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
-                    tmp_coordinate = static_cast<std::int32_t>(target_coordinate.lon);
-                    target_lng = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
-                    tmp_coordinate = static_cast<std::int32_t>(target_coordinate.lat);
-                    target_lat = boost::numeric_cast<double>(tmp_coordinate / COORDINATE_PRECISION);
-                }*/
-                
-                fprintf(fp, "%d, %d, %d, %d, %.6f, %.6f, %.6f, %.6f, %.6f, %d, %d\n", e, source, target, data.forward, sum_distance, 
-                              edge_source_lng, edge_source_lat, edge_target_lng, edge_target_lat, new_source, new_target);  // source表示起始node,target表示末尾node
-
-                //fprintf(fp, "%d, %d, %d, %d, %.6f\n", e, source, target, data.forward, sum_distance);  // source表示起始node,target表示末尾node
+                fprintf(fp, "%d, %d, %d, %d, %.6f\n", e, source, target, data.forward, sum_distance);  // source表示起始node,target表示末尾node
             }
         }
         fclose(fp);
         std::cout << "end e to id mapping...\n";
-        exit(1);
+        exit(1);*/
 
 
 

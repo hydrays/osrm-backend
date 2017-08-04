@@ -244,6 +244,7 @@ void Storage::PopulateLayout(DataLayout &layout)
                                                         hsgr_header.number_of_nodes);
         layout.SetBlockSize<QueryGraph::EdgeArrayEntry>(DataLayout::CH_GRAPH_EDGE_LIST,
                                                         hsgr_header.number_of_edges);
+        // sizeof(QueryGraph::EdgeArrayEntry) == 20, alignof(QueryGraph::EdgeArrayEntry) == 4
     }
 
     // load rsearch tree size

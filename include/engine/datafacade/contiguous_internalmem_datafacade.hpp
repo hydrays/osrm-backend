@@ -74,6 +74,7 @@ class ContiguousInternalMemoryAlgorithmDataFacade<algorithm::CH>
             graph_nodes_ptr, data_layout.num_entries[storage::DataLayout::CH_GRAPH_NODE_LIST]);
         util::ShM<GraphEdge, true>::vector edge_list(
             graph_edges_ptr, data_layout.num_entries[storage::DataLayout::CH_GRAPH_EDGE_LIST]);
+        //node size = 128363, edge size = 695972
         m_query_graph.reset(new QueryGraph(node_list, edge_list));
     }
 
@@ -105,6 +106,11 @@ class ContiguousInternalMemoryAlgorithmDataFacade<algorithm::CH>
     EdgeData &GetEdgeData(const EdgeID e) const override final
     {
         return m_query_graph->GetEdgeData(e);
+    }
+
+    const GraphEdge &GetEdge(const EdgeID e) const
+    {
+        return m_query_graph->GetEdge(e);
     }
 
     EdgeID BeginEdges(const NodeID n) const override final { return m_query_graph->BeginEdges(n); }
@@ -561,7 +567,7 @@ class ContiguousInternalMemoryDataFacadeBase : public BaseDataFacade
     // node and edge information access
     util::Coordinate GetCoordinateOfNode(const NodeID id) const override final
     {
-        return m_coordinate_list[id];
+        return m_coordinate_list[id];  //m_coordinate是从Extractor::WriteNodeMapping函数写入的文件中得到的，是node_based_node
     }
 
     OSMNodeID GetOSMNodeIDOfNode(const NodeID id) const override final
@@ -1064,6 +1070,7 @@ class ContiguousInternalMemoryDataFacade<algorithm::CH>
           ContiguousInternalMemoryAlgorithmDataFacade<algorithm::CH>(allocator)
 
     {
+        //这里是多重继承
     }
 };
 

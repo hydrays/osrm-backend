@@ -42,12 +42,6 @@ GraphContractor::GraphContractor(int nodes,
         }
     }
 
-    out_file = fopen(out_data_file.c_str(), "w");
-    for(auto edge : edges){
-        fprintf(out_file, "%d, %d, %d\n", edge.source, edge.target, edge.data.id);
-    }
-    fclose(out_file);
-
     NodeID edge = 0;
     for (NodeID i = 0; i < edges.size();)
     {
@@ -115,6 +109,12 @@ GraphContractor::GraphContractor(int nodes,
 
     util::Log() << "merged " << edges.size() - edge << " edges out of " << edges.size();
     edges.resize(edge);
+
+    out_file = fopen(out_data_file.c_str(), "w");
+    for(auto edge : edges){
+        fprintf(out_file, "%d, %d, %d\n", edge.source, edge.target, edge.data.id);
+    }
+    fclose(out_file);
 
     //origin edges size = 499258, current edges size = 498912
 
@@ -205,6 +205,8 @@ void GraphContractor::FlushDataAndRebuildContractorGraph(
             }
         }
     }
+    //external_edge_list size = 321294
+    //std::cout << "external_edge_list size = " << external_edge_list.size() << std::endl; 
 
 
     FILE * out_file1, *out_file2, *out_file3;

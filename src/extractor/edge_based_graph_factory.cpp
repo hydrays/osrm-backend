@@ -130,7 +130,7 @@ EdgeBasedGraphFactory::InsertEdgeBasedNode(const NodeID node_u, const NodeID nod
     const auto &forward_geometry = m_compressed_edge_container.GetBucketReference(edge_id_1);
     BOOST_ASSERT(forward_geometry.size() ==
                  m_compressed_edge_container.GetBucketReference(edge_id_2).size());
-    const auto segment_count = forward_geometry.size();
+    const auto segment_count = forward_geometry.size();  //需要被压缩的node_based_edge的个数
 
     // There should always be some geometry
     BOOST_ASSERT(0 != segment_count);

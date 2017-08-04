@@ -97,6 +97,7 @@ template <typename EdgeDataT> class DynamicGraph
             for (const auto i : irange(node_array[node].first_edge,
                                        node_array[node].first_edge + node_array[node].edges))
             {
+                edge_list[i].source = node;
                 edge_list[i].target = graph[edge].target;
                 BOOST_ASSERT(edge_list[i].target < number_of_nodes);
                 edge_list[i].data = graph[edge].data;
@@ -129,6 +130,8 @@ template <typename EdgeDataT> class DynamicGraph
     void SetTarget(const EdgeIterator e, const NodeIterator n) { edge_list[e].target = n; }
 
     EdgeDataT &GetEdgeData(const EdgeIterator e) { return edge_list[e].data; }
+
+    auto &GetEdge(const EdgeIterator e) {return edge_list[e]; }
 
     const EdgeDataT &GetEdgeData(const EdgeIterator e) const { return edge_list[e].data; }
 
@@ -201,6 +204,7 @@ template <typename EdgeDataT> class DynamicGraph
         // get the position for the edge that is to be inserted
         // and write it
         Edge &edge = edge_list[node.first_edge + node.edges];
+        edge.source = from;
         edge.target = to;
         edge.data = data;
         ++number_of_edges;
@@ -318,6 +322,7 @@ template <typename EdgeDataT> class DynamicGraph
 
     struct Edge
     {
+        NodeIterator source;
         NodeIterator target;
         EdgeDataT data;
     };

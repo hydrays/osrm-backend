@@ -110,17 +110,14 @@ class GraphContractor
         util::UnbufferedLog log;
         log << "Getting edges of minimized graph ";
         util::Percent p(log, contractor_graph->GetNumberOfNodes());
-        const NodeID number_of_nodes = contractor_graph->GetNumberOfNodes();
+        const NodeID number_of_nodes = contractor_graph->GetNumberOfNodes();  
+        //contract graph内置由node_array和edge_list，这里edges数组是contract.cpp中的contracted_edge_list，size=0
+        //穿
         //std::cout << "number_of_nodes = " << number_of_nodes << std::endl;
         //此时contractor_graph的number_of_nodes变成了43973,变成了压缩后的图
 
         if (contractor_graph->GetNumberOfNodes())
         {
-            FILE * out_file;
-            std::string out_file_dir = "out/";
-            std::string out_data_file = out_file_dir + "contracted_edges.txt";
-            out_file = fopen(out_data_file.c_str(), "w");
-
             Edge new_edge;
             for (const auto node : util::irange(0u, number_of_nodes))
             {
@@ -145,7 +142,7 @@ class GraphContractor
                     new_edge.data.duration = data.duration;
                     new_edge.data.shortcut = data.shortcut;
 
-                    fprintf(out_file, "%d, %d, %d\n", node, target, data.id);
+                    
                     //对已经收缩的shortcut边进行处理，这里之所以可以把data.id放到origin_node_id_from_new_node_id_map中
                     //是因为在insert_edges插入edge的时候，data.id为shortcut的edge_based_node id
                     if (!data.is_original_via_node_ID && !orig_node_id_from_new_node_id_map.empty())
@@ -164,18 +161,19 @@ class GraphContractor
                     edges.push_back(new_edge);
                 }
             }
-            fclose(out_file);
         }
+
+        //std::cout << "number of edges: " << edges.size() << std::endl;
+        // 在这个地方，edges的size为374677
         contractor_graph.reset();
         orig_node_id_from_new_node_id_map.clear();
         orig_node_id_from_new_node_id_map.shrink_to_fit();
 
         BOOST_ASSERT(0 == orig_node_id_from_new_node_id_map.capacity());
 
-        //std::cout << "number of edges: " << edges.size() << std::endl;
-        // 在这个地方，edges的size为374677
-
         edges.append(external_edge_list.begin(), external_edge_list.end());
+
+        // 这里edges的size为695972
         external_edge_list.clear();
     }
 

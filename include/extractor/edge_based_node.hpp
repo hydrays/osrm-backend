@@ -48,13 +48,13 @@ struct EdgeBasedNode
         BOOST_ASSERT(forward_segment_id.enabled || reverse_segment_id.enabled);
     }
 
-    SegmentID forward_segment_id; // needed for edge-expanded graph
-    SegmentID reverse_segment_id; // needed for edge-expanded graph
+    SegmentID forward_segment_id; // needed for edge-expanded graph,这个其实是node_based_graph中的edge_id,
+    SegmentID reverse_segment_id; // needed for edge-expanded graph,这个其实是node_based_graph中的edge_id,
     NodeID u;                     // indices into the coordinates array
     NodeID v;                     // indices into the coordinates array
     unsigned name_id;             // id of the edge name
 
-    unsigned packed_geometry_id;
+    unsigned packed_geometry_id;   //这个参数在edge_based_graph_factory的InsertEdgeBasedNode函数中由m_compressed_edge_container.ZipEdges函数返回
     struct
     {
         unsigned id : 31;

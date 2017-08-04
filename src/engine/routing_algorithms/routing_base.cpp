@@ -497,7 +497,7 @@ getNetworkDistance(const datafacade::ContiguousInternalMemoryDataFacade<algorith
                             target_phantom.GetReverseWeightPlusOffset(),
                             target_phantom.reverse_segment_id.id);
     }
-
+    
     EdgeWeight weight = INVALID_EDGE_WEIGHT;
     std::vector<NodeID> packed_path;
     search(facade,
