@@ -467,6 +467,9 @@ Extractor::BuildEdgeExpandedGraph(ScriptingEnvironment &scripting_environment,
     std::unordered_set<NodeID> traffic_lights;
 
     auto restriction_map = LoadRestrictionMap();
+    //注意node_based_graph的类型是NodeBasedDynamicGraph，在node_based_graph.hpp中有以下语句：
+    //using NodeBasedDynamicGraph = DynamicGraph<NodeBasedEdgeData>;
+    
     auto node_based_graph =
         LoadNodeBasedGraph(barrier_nodes, traffic_lights, internal_to_external_node_map);
 

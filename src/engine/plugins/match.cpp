@@ -198,7 +198,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
 
     if (sub_matchings.size() == 0)
     {
-        std::cout << "no match error" << std::endl;
+        //std::cout << "no match error" << std::endl;
         return Error("NoMatch", "Could not match the trace.", json_result);
     }
 
@@ -242,6 +242,8 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
         sub_routes[index] = algorithms.ShortestPathSearch(sub_routes[index].segment_end_coordinates, {false});
         //sub_routes[index] = algorithms.TrafficPrediction(sub_routes[index].segment_end_coordinates, {false});
 
+        //-------------------------------------------------------------------------------------------------------        
+        //下面是个人新加的代码
 
         auto &raw_route_data = sub_routes[index]; 
         
@@ -263,6 +265,8 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
 
         }*/
 
+
+        /*
         FILE * out_data_file;
         std::string out_file_dir = "out/";
         std::string out_data_dir = out_file_dir + parameters.data_file_dir + "/";
@@ -290,7 +294,7 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           getchar();
         }
 
-        // fprintf(out_data_file,"-1,0,0,0,0,0,0,0,0,\n");
+        //fprintf(out_data_file,"-1,0,0,0,0,0,0,0,0,\n");
 
         auto prev_point_index = sub_matchings[index].indices[0];
         auto pre_time_rec = parameters.timestamps[prev_point_index];
@@ -353,15 +357,12 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
               name_list.push_back(path_point.name_id);
 
               tmp_sum_distance += current_distance;
-              /*if (current_distance == 0){
-                std::cout << "coordinate 1 = " << prev_coordinate.lon << "," << prev_coordinate.lat << "; coordinate 2 = "
-                << coordinate.lon << "," << coordinate.lat << std::endl; 
-              }*/
+              //if (current_distance == 0){
+              //  std::cout << "coordinate 1 = " << prev_coordinate.lon << "," << prev_coordinate.lat << "; coordinate 2 = "
+              //  << coordinate.lon << "," << coordinate.lat << std::endl; 
+              //}
               prev_coordinate = coordinate;
-              /*std::cout << "edge id: " << path_point.edge_id <<
-                  " name: " << path_point.name_id <<
-                  " eta: " << eta <<
-                  " current distance: " << current_distance << "\n";  */    
+              /*std::cout << "edge id: " << path_point.edge_id <<" name: " << path_point.name_id <<" eta: " << eta << " current distance: " << current_distance << "\n"; 
           }
           
           //fprintf(out_data_file, "--------------------------\n");
@@ -372,17 +373,17 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
           //printf("aaaa origin_edge_id =%d  idx=%d path = %d\n",origin_edge_id,idx,path_distances.size());
           for (unsigned i = 0; i < path_distances.size(); i++)
           {
-            /*if(idx > 0 && i == 0)
-              end_time_cal = parameters.timestamps[prev_point_index] + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
-            else
-              end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
-            end_time_rec = start_time_rec + time_record[i];
+            //if(idx > 0 && i == 0)
+            //  end_time_cal = parameters.timestamps[prev_point_index] + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            //else
+            //  end_time_cal = start_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
+            //end_time_rec = start_time_rec + time_record[i];
 
-            partial_distance += path_distances[i];
-            fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%.6f,%.6f,\n", start_time_cal, end_time_cal, 
-              start_time_rec, end_time_rec,edge_id_list[i],name_list[i],partial_distance, path_distances[i]);
-            start_time_rec = end_time_rec;
-            start_time_cal = end_time_cal; */
+            //partial_distance += path_distances[i];
+            //fprintf(out_data_file,"%d,%d,%d,%d,%d,%d,%.6f,%.6f,\n", start_time_cal, end_time_cal, 
+            //  start_time_rec, end_time_rec,edge_id_list[i],name_list[i],partial_distance, path_distances[i]);
+            //start_time_rec = end_time_rec;
+            //start_time_cal = end_time_cal;
 
 
             
@@ -433,9 +434,9 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
             
             
             //end_time_cal = pre_time_cal + (int)(path_distances[i]/tmp_sum_distance*data_time_interval);
-            /*if (end_time_cal == -2147442995){
-              std::cout << "YES " << pre_time_cal << " " << path_distances[i] << " " << tmp_sum_distance << " " << data_time_interval << std::endl;
-            }*/
+            //if (end_time_cal == -2147442995){
+            //  std::cout << "YES " << pre_time_cal << " " << path_distances[i] << " " << tmp_sum_distance << " " << data_time_interval << std::endl;
+            //}
             
           }
           
@@ -467,14 +468,17 @@ Status MatchPlugin::HandleRequest(const datafacade::ContiguousInternalMemoryData
             
           //fprintf(out_data_file, "------------------\n");
 
+
           current_distance =
           util::coordinate_calculation::haversineDistance(prev_coordinate, phantoms.target_phantom.location);
           cumulative_distance += current_distance;
         }
         fflush(out_data_file);
         fclose(out_data_file);
-        //std::cout << "cumulative_distance: " << cumulative_distance << std::endl; 
+        //std::cout << "cumulative_distance: " << cumulative_distance << std::endl; */
 
+        //上面是个人新加的代码
+        //------------------------------------------------------------------------------------------
         BOOST_ASSERT(sub_routes[index].shortest_path_length != INVALID_EDGE_WEIGHT);
     }
 

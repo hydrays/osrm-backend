@@ -113,6 +113,9 @@ int main(int argc, const char *argv[]) //try
 	//std::string base_data_path = "../../../data/LoadedRoutes/";
     std::string base_data_path = "/media/jhljx/Elements/Rsync/LoadedRoutes/";
 
+    //std::vector<std::string> date_string_vec = {"20130218", "20130219", "20130220", "20130221", "20130222", "20130223", "20130224",
+    //                                            "20130304", "20130305", "20130306", "20130307", "20130308", "20130310", "20130311"};
+
     std::vector<std::string> date_string_vec = {"20130225","20130226","20130227","20130228","20130301","20130302","20130303"};
 
     //std::cout << "Hello world!" << std::endl;
@@ -136,7 +139,7 @@ int main(int argc, const char *argv[]) //try
         
 
         std::string in_file_list_name = data_path + "filelist.txt";
-        std::cout << in_file_list_name << std::endl;
+        //std::cout << in_file_list_name << std::endl;
         FILE * in_file_list;
         in_file_list = fopen (in_file_list_name.c_str(), "r");
         if ( in_file_list == NULL ){

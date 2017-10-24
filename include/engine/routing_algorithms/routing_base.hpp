@@ -291,21 +291,21 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
 
         /*
         FILE *node_fp = fopen("node_based_graph_edges.txt", "r");
-        int edge_id = 0, source_id = 0, target_id = 0, is_foward = 0, weight = 0;
+        int edge_id = 0, source_id = 0, target_id = 0, is_forward = 0, weight = 0;
         std::map<std::pair<int,int>,std::pair<int,int> > Mp;
         Mp.clear();
-        while(fscanf(node_fp, "%d,%d,%d,%d,%d", &edge_id, &source_id, &target_id, &is_foward, &weight)!=EOF)
+        while(fscanf(node_fp, "%d, %d, %d, %d, %d", &edge_id, &source_id, &target_id, &is_forward, &weight)!=EOF)
         {
-            //std::cout << "record edge " << e_id << std::endl;
-            Mp.insert({std::make_pair(source_id,target_id), std::make_pair(edge_id,is_foward)});
+            std::cout << "record edge " << edge_id << ", is_forward" << is_forward << std::endl;
+            Mp.insert({std::make_pair(source_id,target_id), std::make_pair(edge_id,is_forward)});
         }
         fclose(node_fp);
         // output edge_id and (node_from_id, node_to_id) mapping file 
         std::cout << "beging e_id (n_from_id,n_to_id) mapping...\n";
         FILE *fp;
-        fp = fopen("e_to_node_id_mapping.txt", "w");
+        //fp = fopen("e_to_node_id_mapping.txt", "w");
         //fp = fopen("e_to_node_id_mapping_old.txt", "w");
-        //fp = fopen("e_to_node_id_mapping_new.txt", "w");
+        fp = fopen("e_to_node_id_mapping_new.txt", "w");
         
         //fprintf(fp, "e_id, e_source_id, e_target_id, e_forward, distance, source_lng, source_lat, target_lng, target_lat, n_source_id, n_target_id, n_edge_id, n_forward\n");
         
@@ -317,7 +317,7 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
             
             auto data = facade.GetEdgeData(e);  //这个data就是facade.GetEdge得到的EdgeArrayEntry的data成员
             auto edge = facade.GetEdge(e);
-            int source = edge.source, target = edge.target, is_foward = edge.data.forward;
+            int source = edge.source, target = edge.target;
             
             if ( !data.shortcut && data.weight != std::numeric_limits<EdgeWeight>::max())
             {
@@ -384,16 +384,17 @@ void unpackPath(const datafacade::ContiguousInternalMemoryDataFacade<algorithm::
                     origin_node_edge_id = mpValue.first;
                     n_is_forward = mpValue.second;
                 }
-                //fprintf(fp, "%d, %d, %d, %d, %.6f, %.6f, %.6f, %.6f, %.6f, %d, %d, %d, %d\n", e, source, target, data.forward, sum_distance, 
-                    //edge_source_lng, edge_source_lat, edge_target_lng, edge_target_lat, new_source, new_target, origin_node_edge_id, n_is_forward);  
+                fprintf(fp, "%d, %d, %d, %d, %.6f, %.6f, %.6f, %.6f, %.6f, %d, %d, %d, %d\n", e, source, target, data.forward, sum_distance, 
+                    edge_source_lng, edge_source_lat, edge_target_lng, edge_target_lat, new_source, new_target, origin_node_edge_id, n_is_forward);  
                 // source表示起始node,target表示末尾node
 
-                fprintf(fp, "%d, %d, %d, %d, %.6f\n", e, source, target, data.forward, sum_distance);  // source表示起始node,target表示末尾node
+                //fprintf(fp, "%d, %d, %d, %d, %.6f\n", e, source, target, data.forward, sum_distance);  // source表示起始node,target表示末尾node
             }
         }
         fclose(fp);
         std::cout << "end e to id mapping...\n";
-        exit(1);*/
+        exit(1);
+        */
 
 
 
