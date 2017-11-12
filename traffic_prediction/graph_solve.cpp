@@ -158,7 +158,7 @@ int main(int argc, const char *argv[]) //try
     for(int i = 0; i < node_num; i++)
     {
         fprintf(adjacent_file, "%.6f", G[i][0]);
-        for(int j = 0; j < node_num; j++)
+        for(int j = 1; j < node_num; j++)
         {
             fprintf(adjacent_file, ", %.6f", G[i][j]);
         }
